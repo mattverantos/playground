@@ -46,19 +46,18 @@ export default function CohortBuilder() {
         
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <IndexDateCard 
-              data={cohortCriteria.indexDate} 
-              onUpdate={(data) => handleUpdateCriteria('indexDate', data)} 
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
             <EventsCard 
               events={cohortCriteria.events}
               onUpdate={(data) => handleUpdateCriteria('events', data)}
             />
           </Grid>
-          
+          <Grid item xs={12}>
+            <IndexDateCard 
+              data={cohortCriteria.indexDate} 
+              availableEvents={cohortCriteria.events}
+              onUpdate={(data) => handleUpdateCriteria('indexDate', data)} 
+            />
+          </Grid>          
           <Grid item xs={12}>
             <StudyPeriodCard 
               period={cohortCriteria.studyPeriod}
