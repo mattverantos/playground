@@ -19,6 +19,7 @@ const EventBuilder: React.FC = () => {
   const [eventDescription, setEventDescription] = useState('');
   const [filters, setFilters] = useState<Filter[]>([]);
   const [filterToAdd, setFilterToAdd] = useState<FilterType>('concept');
+  const [isMinimized, setIsMinimized] = useState(false);
   
   // Generate empty concept filter template
   const newConceptFilter = (operator?: 'AND' | 'OR'): ConceptFilter => ({
@@ -106,6 +107,10 @@ const EventBuilder: React.FC = () => {
 
   const cancelEdit = () => {
     dispatch({ type: 'SET_CURRENT_EVENT', payload: null });
+  };
+
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
   };
 
   const renderFilterContent = (filter: Filter, index: number) => {
@@ -309,96 +314,116 @@ const EventBuilder: React.FC = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Event Builder</h2>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Event Name</label>
-        <input
-          type="text"
-          className="w-full p-2 border rounded"
-          value={eventName}
-          onChange={(e) => setEventName(e.target.value)}
-        />
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <textarea
-          className="w-full p-2 border rounded"
-          rows={2}
-          value={eventDescription}
-          onChange={(e) => setEventDescription(e.target.value)}
-        />
-      </div>
-      
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-medium">Filters</h3>
-          <div className="flex gap-2">
-            <select 
-              className="p-1 border rounded text-sm"
-              value={filterToAdd}
-              onChange={(e) => setFilterToAdd(e.target.value as FilterType)}
-            >
-              <option value="concept">Concept Filter</option>
-              <option value="date">Date Filter</option>
-            </select>
-            <button 
-              onClick={addFilter}
-              className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              Add Filter
-            </button>
-          </div>
-        </div>
-        
-        {filters.map((filter, index) => (
-          <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
-            <div className="flex justify-between mb-2">
-              <span className="font-medium">
-                {filter.type === 'concept' ? 'Concept Filter' : 'Date Filter'} {index + 1}
-              </span>
-              <button 
-                onClick={() => removeFilter(filter.id)}
-                className="text-red-500"
-                disabled={filters.length === 1}
-              >
-                Remove
-              </button>
-            </div>
-            
-            {index > 0 && (
-              <div className="mb-2">
-                <label className="block text-sm font-medium mb-1">Logical Operator</label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={filter.logicalOperator || 'AND'}
-                  onChange={(e) => updateFilter(filter.id, 'logicalOperator', e.target.value)}
-                >
-                  <option value="AND">AND</option>
-                  <option value="OR">OR</option>
-                </select>
-              </div>
-            )}
-            
-            {renderFilterContent(filter, index)}
-          </div>
-        ))}
-      </div>
-      
-      <div className="flex justify-end gap-2">
-        {state.currentEvent && (
-          <button onClick={cancelEdit} className="px-4 py-2 border rounded">
-            Cancel
-          </button>
-        )}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Event Builder</h2>
         <button 
-          onClick={saveEvent}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={toggleMinimize}
+          className="p-1 text-gray-600 hover:text-gray-900"
         >
-          {state.currentEvent ? 'Update Event' : 'Save Event'}
+          {isMinimized ? 
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v8a1 1 0 11-2 0V6a1 1 0 011-1z" clipRule="evenodd" />
+            </svg> :
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+          }
         </button>
       </div>
+      
+      {!isMinimized && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Event Name</label>
+            <input
+              type="text"
+              className="w-full p-2 border rounded"
+              value={eventName}
+              onChange={(e) => setEventName(e.target.value)}
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              className="w-full p-2 border rounded"
+              rows={2}
+              value={eventDescription}
+              onChange={(e) => setEventDescription(e.target.value)}
+            />
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">Filters</h3>
+              <div className="flex gap-2">
+                <select 
+                  className="p-1 border rounded text-sm"
+                  value={filterToAdd}
+                  onChange={(e) => setFilterToAdd(e.target.value as FilterType)}
+                >
+                  <option value="concept">Concept Filter</option>
+                  <option value="date">Date Filter</option>
+                </select>
+                <button 
+                  onClick={addFilter}
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+                >
+                  Add Filter
+                </button>
+              </div>
+            </div>
+            
+            {filters.map((filter, index) => (
+              <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
+                <div className="flex justify-between mb-2">
+                  <span className="font-medium">
+                    {filter.type === 'concept' ? 'Concept Filter' : 'Date Filter'} {index + 1}
+                  </span>
+                  <button 
+                    onClick={() => removeFilter(filter.id)}
+                    className="text-red-500"
+                    disabled={filters.length === 1}
+                  >
+                    Remove
+                  </button>
+                </div>
+                
+                {index > 0 && (
+                  <div className="mb-2">
+                    <label className="block text-sm font-medium mb-1">Logical Operator</label>
+                    <select
+                      className="w-full p-2 border rounded"
+                      value={filter.logicalOperator || 'AND'}
+                      onChange={(e) => updateFilter(filter.id, 'logicalOperator', e.target.value)}
+                    >
+                      <option value="AND">AND</option>
+                      <option value="OR">OR</option>
+                    </select>
+                  </div>
+                )}
+                
+                {renderFilterContent(filter, index)}
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            {state.currentEvent && (
+              <button onClick={cancelEdit} className="px-4 py-2 border rounded">
+                Cancel
+              </button>
+            )}
+            <button 
+              onClick={saveEvent}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {state.currentEvent ? 'Update Event' : 'Save Event'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
