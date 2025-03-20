@@ -22,26 +22,6 @@ const columnOptions = [
   { value: 'occurrence_date', label: 'Occurrence Date', type: 'date' }
 ];
 
-// Entity Selector Component
-const EntitySelector: React.FC<{
-  entity: string;
-  updateFilter: (field: string, value: any) => void;
-}> = ({ entity, updateFilter }) => (
-  <div className="mb-3">
-    <label className="block text-sm font-medium mb-1">Entity (Table)</label>
-    <select
-      className="w-full p-2 border rounded"
-      value={entity || domainOptions[0].value}
-      onChange={(e) => updateFilter('entity', e.target.value)}
-    >
-      {domainOptions.map(option => (
-        <option key={option.value} value={option.value}>{option.label}</option>
-      ))}
-    </select>
-  </div>
-);
-
-
 // Component for Column Filters
 const ColumnFilterComponent: React.FC<{
   filter: ColumnFilter;
@@ -57,7 +37,6 @@ const ColumnFilterComponent: React.FC<{
 
   return (
     <>
-      <EntitySelector entity={filter.entity} updateFilter={handleUpdate} />
       <div className="grid grid-cols-1 gap-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div>
@@ -173,79 +152,76 @@ const OccurrenceFilterComponent: React.FC<{
   };
 
   return (
-    <>
-      <EntitySelector entity={filter.entity} updateFilter={handleUpdate} />
-      <div className="p-3 border rounded bg-gray-50">
-        <div className="mb-2">
-          <label className="block text-sm font-medium mb-1">Occurrence Type</label>
-          <div className="flex gap-4">
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                checked={filter.occurrenceType === 'index'}
-                onChange={() => handleUpdate('occurrenceType', 'index')}
-                className="mr-2"
-              />
-              Index
-            </label>
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                checked={filter.occurrenceType === 'window'}
-                onChange={() => handleUpdate('occurrenceType', 'window')}
-                className="mr-2"
-              />
-              Window
-            </label>
-          </div>
+    <div className="p-3 border rounded bg-gray-50">
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Occurrence Type</label>
+        <div className="flex gap-4">
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              checked={filter.occurrenceType === 'index'}
+              onChange={() => handleUpdate('occurrenceType', 'index')}
+              className="mr-2"
+            />
+            Index
+          </label>
+          <label className="inline-flex items-center">
+            <input
+              type="radio"
+              checked={filter.occurrenceType === 'window'}
+              onChange={() => handleUpdate('occurrenceType', 'window')}
+              className="mr-2"
+            />
+            Window
+          </label>
         </div>
-        
-        {filter.occurrenceType === 'index' ? (
+      </div>
+      
+      {filter.occurrenceType === 'index' ? (
+        <div>
+          <label className="block text-sm font-medium mb-1">Select Index</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={filter.index === 'last' ? 'last' : filter.index?.toString() || '1'}
+            onChange={(e) => {
+              const value = e.target.value === 'last' ? 'last' : parseInt(e.target.value);
+              handleUpdate('index', value);
+            }}
+          >
+            <option value="1">1st occurrence</option>
+            <option value="2">2nd occurrence</option>
+            <option value="3">3rd occurrence</option>
+            <option value="4">4th occurrence</option>
+            <option value="5">5th occurrence</option>
+            <option value="last">Last occurrence</option>
+          </select>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Select Index</label>
+            <label className="block text-sm font-medium mb-1">Window Type</label>
             <select
               className="w-full p-2 border rounded"
-              value={filter.index === 'last' ? 'last' : filter.index?.toString() || '1'}
-              onChange={(e) => {
-                const value = e.target.value === 'last' ? 'last' : parseInt(e.target.value);
-                handleUpdate('index', value);
-              }}
+              value={filter.windowType || 'fixed'}
+              onChange={(e) => handleUpdate('windowType', e.target.value)}
             >
-              <option value="1">1st occurrence</option>
-              <option value="2">2nd occurrence</option>
-              <option value="3">3rd occurrence</option>
-              <option value="4">4th occurrence</option>
-              <option value="5">5th occurrence</option>
-              <option value="last">Last occurrence</option>
+              <option value="fixed">Fixed Window</option>
+              <option value="rolling">Rolling Window</option>
             </select>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1">Window Type</label>
-              <select
-                className="w-full p-2 border rounded"
-                value={filter.windowType || 'fixed'}
-                onChange={(e) => handleUpdate('windowType', e.target.value)}
-              >
-                <option value="fixed">Fixed Window</option>
-                <option value="rolling">Rolling Window</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Window Length (days)</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={filter.windowDays || ''}
-                onChange={(e) => handleUpdate('windowDays', parseInt(e.target.value) || undefined)}
-                min="1"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Window Length (days)</label>
+            <input
+              type="number"
+              className="w-full p-2 border rounded"
+              value={filter.windowDays || ''}
+              onChange={(e) => handleUpdate('windowDays', parseInt(e.target.value) || undefined)}
+              min="1"
+            />
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -309,6 +285,7 @@ const EventBuilder: React.FC = () => {
   
   const [eventName, setEventName] = useState('');
   const [eventDescription, setEventDescription] = useState('');
+  const [eventEntity, setEventEntity] = useState(domainOptions[0].value);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [filterToAdd, setFilterToAdd] = useState<FilterType>('column');
   const [isMinimized, setIsMinimized] = useState(false);
@@ -318,7 +295,6 @@ const EventBuilder: React.FC = () => {
     id: uuidv4(),
     type: 'column',
     logicalOperator: operator,
-    entity: domainOptions[0].value,
     columnName: columnOptions[0].value,
   });
 
@@ -327,7 +303,6 @@ const EventBuilder: React.FC = () => {
     id: uuidv4(),
     type: 'occurrence',
     logicalOperator: operator,
-    entity: domainOptions[0].value,
     occurrenceType: 'index',
     index: 1,
   });
@@ -337,11 +312,13 @@ const EventBuilder: React.FC = () => {
     if (state.currentEvent) {
       setEventName(state.currentEvent.name);
       setEventDescription(state.currentEvent.description || '');
+      setEventEntity(state.currentEvent.entity || domainOptions[0].value);
       setFilters([...state.currentEvent.filters]);
     } else {
       // Reset form when no current event
       setEventName('');
       setEventDescription('');
+      setEventEntity(domainOptions[0].value);
       setFilters([newColumnFilter()]);
     }
   }, [state.currentEvent]);
@@ -402,6 +379,7 @@ const EventBuilder: React.FC = () => {
       id: state.currentEvent?.id || uuidv4(),
       name: eventName.trim(),
       description: eventDescription.trim(),
+      entity: eventEntity,
       filters,
       sql: `-- SQL would be generated based on filters`
     };
@@ -415,6 +393,7 @@ const EventBuilder: React.FC = () => {
     // Reset form
     setEventName('');
     setEventDescription('');
+    setEventEntity(domainOptions[0].value);
     setFilters([newColumnFilter()]);
   };
 
@@ -466,6 +445,19 @@ const EventBuilder: React.FC = () => {
               value={eventDescription}
               onChange={(e) => setEventDescription(e.target.value)}
             />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Entity (Table)</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={eventEntity}
+              onChange={(e) => setEventEntity(e.target.value)}
+            >
+              {domainOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </div>
           
           <div className="mb-4">

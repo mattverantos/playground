@@ -40,13 +40,15 @@ const EventList: React.FC = () => {
     
     return (
       <div className="text-sm text-gray-600">
+        {/* Display entity first */}
+        <div className="font-medium mb-1">Entity: {event.entity}</div>
+        
         {event.filters.map((filter: Filter, index: number) => (
           <div key={filter.id} className="mb-1">
             {index > 0 && <span className="font-semibold">{filter.logicalOperator} </span>}
             
             {filter.type === 'column' ? (
               <span>
-                {(filter as ColumnFilter).entity && `${(filter as ColumnFilter).entity}: `}
                 {(filter as ColumnFilter).columnName || 'Column'}{' '}
                 {(filter as ColumnFilter).operator && ` ${(filter as ColumnFilter).operator}`}{' '}
                 {(filter as ColumnFilter).isNumeric 

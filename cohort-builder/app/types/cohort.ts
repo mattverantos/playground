@@ -4,7 +4,7 @@ export interface BaseFilter {
   id: string;
   type: FilterType;
   logicalOperator?: 'AND' | 'OR';
-  entity?: string; // Table selection
+  // entity property removed from here
 }
 
 
@@ -35,6 +35,7 @@ export interface Event {
   id: string;
   name: string;
   description: string;
+  entity: string; // Added entity property here
   filters: Filter[];
   sql: string;
 }
