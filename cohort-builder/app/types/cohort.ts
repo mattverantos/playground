@@ -1,32 +1,35 @@
-export type FilterType = 'concept' | 'date';
+export type FilterType = 'column' | 'frequency';
 
 export interface BaseFilter {
   id: string;
   type: FilterType;
   logicalOperator?: 'AND' | 'OR';
+  entity?: string; // Table selection
 }
 
-export interface ConceptFilter extends BaseFilter {
-  type: 'concept';
-  domain: string;
-  column?: string;
+
+// New filter type for column filtering
+export interface ColumnFilter extends BaseFilter {
+  type: 'column';
+  columnName?: string; // concept, concept type, related concept, etc.
   operator?: string;
   value?: string;
   minValue?: string;
   maxValue?: string;
+  isNumeric?: boolean;
+  isDate?: boolean;
 }
 
-export interface DateFilter extends BaseFilter {
-  type: 'date';
-  dateType: 'absolute' | 'relative';
-  startDate?: string;
-  endDate?: string;
-  referencedEventId?: string;
-  daysBefore?: number;
-  daysAfter?: number;
+// New filter type for frequency filtering
+export interface FrequencyFilter extends BaseFilter {
+  type: 'frequency';
+  frequencyType?: 'index' | 'window';
+  index?: number | 'last'; // For index type: 1st (1), 2nd (2), etc., or 'last'
+  windowType?: 'rolling' | 'fixed'; // For window type
+  windowDays?: number; // Number of days for the window
 }
 
-export type Filter = ConceptFilter | DateFilter;
+export type Filter = ColumnFilter | FrequencyFilter;
 
 export interface Event {
   id: string;

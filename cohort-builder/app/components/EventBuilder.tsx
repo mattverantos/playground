@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCohort } from '../contexts/CohortContext';
-import { Filter, ConceptFilter, DateFilter, FilterType, Event } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter, FrequencyFilter } from '../types/cohort';
 import { v4 as uuidv4 } from 'uuid';
 
 const domainOptions = [
@@ -12,29 +12,324 @@ const domainOptions = [
   { value: 'condition', label: 'Condition' }
 ];
 
+const columnOptions = [
+  { value: 'concept', label: 'Concept', type: 'string' },
+  { value: 'concept_type', label: 'Concept Type', type: 'string' },
+  { value: 'related_concept', label: 'Related Concept', type: 'string' },
+  { value: 'related_concept_type', label: 'Related Concept Type', type: 'string' },
+  { value: 'value', label: 'Value', type: 'numeric' },
+  { value: 'related_value', label: 'Related Value', type: 'numeric' },
+  { value: 'occurrence_date', label: 'Occurrence Date', type: 'date' }
+];
+
+// Entity Selector Component
+const EntitySelector: React.FC<{
+  entity: string;
+  updateFilter: (field: string, value: any) => void;
+}> = ({ entity, updateFilter }) => (
+  <div className="mb-3">
+    <label className="block text-sm font-medium mb-1">Entity (Table)</label>
+    <select
+      className="w-full p-2 border rounded"
+      value={entity || domainOptions[0].value}
+      onChange={(e) => updateFilter('entity', e.target.value)}
+    >
+      {domainOptions.map(option => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </select>
+  </div>
+);
+
+
+// Component for Column Filters
+const ColumnFilterComponent: React.FC<{
+  filter: ColumnFilter;
+  updateFilter: (id: string, field: string, value: any) => void;
+}> = ({ filter, updateFilter }) => {
+  const selectedColumn = columnOptions.find(col => col.value === filter.columnName);
+  const isNumeric = selectedColumn?.type === 'numeric';
+  const isDate = selectedColumn?.type === 'date';
+
+  const handleUpdate = (field: string, value: any) => {
+    updateFilter(filter.id, field, value);
+  };
+
+  return (
+    <>
+      <EntitySelector entity={filter.entity} updateFilter={handleUpdate} />
+      <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div>
+            <label className="block text-sm font-medium mb-1">Column</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={filter.columnName || columnOptions[0].value}
+              onChange={(e) => handleUpdate('columnName', e.target.value)}
+            >
+              {columnOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Operator</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={filter.operator || 'equals'}
+              onChange={(e) => handleUpdate('operator', e.target.value)}
+            >
+              {isNumeric ? (
+                <>
+                  <option value="equals">= (equals)</option>
+                  <option value="not_equals">!= (not equals)</option>
+                  <option value="greater_than">&gt; (greater than)</option>
+                  <option value="less_than">&lt; (less than)</option>
+                  <option value="greater_equals">&gt;= (greater equals)</option>
+                  <option value="less_equals">&lt;= (less equals)</option>
+                  <option value="between">BETWEEN</option>
+                </>
+              ) : isDate ? (
+                <>
+                  <option value="equals">= (equals)</option>
+                  <option value="not_equals">!= (not equals)</option>
+                  <option value="greater_than">&gt; (after)</option>
+                  <option value="less_than">&lt; (before)</option>
+                  <option value="between">BETWEEN</option>
+                </>
+              ) : (
+                <>
+                  <option value="equals">= (equals)</option>
+                  <option value="not_equals">!= (not equals)</option>
+                  <option value="contains">CONTAINS</option>
+                  <option value="starts_with">STARTS WITH</option>
+                  <option value="ends_with">ENDS WITH</option>
+                  <option value="in">IN</option>
+                  <option value="not_in">NOT IN</option>
+                </>
+              )}
+            </select>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {filter.operator === 'between' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">Min Value</label>
+                <input
+                  type={isDate ? "date" : isNumeric ? "number" : "text"}
+                  className="w-full p-2 border rounded"
+                  value={filter.minValue || ''}
+                  onChange={(e) => handleUpdate('minValue', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Max Value</label>
+                <input
+                  type={isDate ? "date" : isNumeric ? "number" : "text"}
+                  className="w-full p-2 border rounded"
+                  value={filter.maxValue || ''}
+                  onChange={(e) => handleUpdate('maxValue', e.target.value)}
+                />
+              </div>
+            </>
+          ) : filter.operator === 'in' || filter.operator === 'not_in' ? (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Values (comma separated)</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={filter.value || ''}
+                placeholder="value1, value2, value3"
+                onChange={(e) => handleUpdate('value', e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Value</label>
+              <input
+                type={isDate ? "date" : isNumeric ? "number" : "text"}
+                className="w-full p-2 border rounded"
+                value={filter.value || ''}
+                onChange={(e) => handleUpdate('value', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// Component for Frequency Filters
+const FrequencyFilterComponent: React.FC<{
+  filter: FrequencyFilter;
+  updateFilter: (id: string, field: string, value: any) => void;
+}> = ({ filter, updateFilter }) => {
+  const handleUpdate = (field: string, value: any) => {
+    updateFilter(filter.id, field, value);
+  };
+
+  return (
+    <>
+      <EntitySelector entity={filter.entity} updateFilter={handleUpdate} />
+      <div className="p-3 border rounded bg-gray-50">
+        <div className="mb-2">
+          <label className="block text-sm font-medium mb-1">Frequency Type</label>
+          <div className="flex gap-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                checked={filter.frequencyType === 'index'}
+                onChange={() => handleUpdate('frequencyType', 'index')}
+                className="mr-2"
+              />
+              Index
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                checked={filter.frequencyType === 'window'}
+                onChange={() => handleUpdate('frequencyType', 'window')}
+                className="mr-2"
+              />
+              Window
+            </label>
+          </div>
+        </div>
+        
+        {filter.frequencyType === 'index' ? (
+          <div>
+            <label className="block text-sm font-medium mb-1">Select Index</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={filter.index === 'last' ? 'last' : filter.index?.toString() || '1'}
+              onChange={(e) => {
+                const value = e.target.value === 'last' ? 'last' : parseInt(e.target.value);
+                handleUpdate('index', value);
+              }}
+            >
+              <option value="1">1st occurrence</option>
+              <option value="2">2nd occurrence</option>
+              <option value="3">3rd occurrence</option>
+              <option value="4">4th occurrence</option>
+              <option value="5">5th occurrence</option>
+              <option value="last">Last occurrence</option>
+            </select>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2">
+            <div>
+              <label className="block text-sm font-medium mb-1">Window Type</label>
+              <select
+                className="w-full p-2 border rounded"
+                value={filter.windowType || 'fixed'}
+                onChange={(e) => handleUpdate('windowType', e.target.value)}
+              >
+                <option value="fixed">Fixed Window</option>
+                <option value="rolling">Rolling Window</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Window Length (days)</label>
+              <input
+                type="number"
+                className="w-full p-2 border rounded"
+                value={filter.windowDays || ''}
+                onChange={(e) => handleUpdate('windowDays', parseInt(e.target.value) || undefined)}
+                min="1"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+// Filter Wrapper Component
+const FilterWrapper: React.FC<{
+  filter: Filter;
+  index: number;
+  updateFilter: (id: string, field: string, value: any) => void;
+  removeFilter: (id: string) => void;
+  showLogicalOperator: boolean;
+  events: Event[];
+}> = ({ filter, index, updateFilter, removeFilter, showLogicalOperator, events }) => {
+  return (
+    <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
+      <div className="flex justify-between mb-2">
+        <span className="font-medium">
+          {filter.type === 'column' ? 'Column Filter' :
+           'Frequency Filter'} {index + 1}
+        </span>
+        <button 
+          onClick={() => removeFilter(filter.id)}
+          className="text-red-500"
+        >
+          Remove
+        </button>
+      </div>
+      
+      {showLogicalOperator && (
+        <div className="mb-2">
+          <label className="block text-sm font-medium mb-1">Logical Operator</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={filter.logicalOperator || 'AND'}
+            onChange={(e) => updateFilter(filter.id, 'logicalOperator', e.target.value)}
+          >
+            <option value="AND">AND</option>
+            <option value="OR">OR</option>
+          </select>
+        </div>
+      )}
+      
+      {filter.type === 'column' && (
+        <ColumnFilterComponent 
+          filter={filter as ColumnFilter} 
+          updateFilter={updateFilter}
+        />
+      )}
+      
+      {filter.type === 'frequency' && (
+        <FrequencyFilterComponent 
+          filter={filter as FrequencyFilter} 
+          updateFilter={updateFilter}
+        />
+      )}
+    </div>
+  );
+};
+
 const EventBuilder: React.FC = () => {
   const { state, dispatch } = useCohort();
   
   const [eventName, setEventName] = useState('');
   const [eventDescription, setEventDescription] = useState('');
   const [filters, setFilters] = useState<Filter[]>([]);
-  const [filterToAdd, setFilterToAdd] = useState<FilterType>('concept');
+  const [filterToAdd, setFilterToAdd] = useState<FilterType>('column');
   const [isMinimized, setIsMinimized] = useState(false);
-  
-  // Generate empty concept filter template
-  const newConceptFilter = (operator?: 'AND' | 'OR'): ConceptFilter => ({
+
+  // Generate empty column filter template
+  const newColumnFilter = (operator?: 'AND' | 'OR'): ColumnFilter => ({
     id: uuidv4(),
-    type: 'concept',
+    type: 'column',
     logicalOperator: operator,
-    domain: 'condition',
+    entity: domainOptions[0].value,
+    columnName: columnOptions[0].value,
   });
 
-  // Generate empty date filter template
-  const newDateFilter = (operator?: 'AND' | 'OR'): DateFilter => ({
+  // Generate empty frequency filter template
+  const newFrequencyFilter = (operator?: 'AND' | 'OR'): FrequencyFilter => ({
     id: uuidv4(),
-    type: 'date',
+    type: 'frequency',
     logicalOperator: operator,
-    dateType: 'absolute',
+    entity: domainOptions[0].value,
+    frequencyType: 'index',
+    index: 1,
   });
 
   useEffect(() => {
@@ -47,29 +342,48 @@ const EventBuilder: React.FC = () => {
       // Reset form when no current event
       setEventName('');
       setEventDescription('');
-      setFilters([newConceptFilter()]);
+      setFilters([newColumnFilter()]);
     }
   }, [state.currentEvent]);
 
   const addFilter = () => {
     const operator = filters.length > 0 ? 'AND' : undefined;
     
-    if (filterToAdd === 'concept') {
-      setFilters([...filters, newConceptFilter(operator)]);
-    } else {
-      setFilters([...filters, newDateFilter(operator)]);
+    switch (filterToAdd) {
+      case 'column':
+        setFilters([...filters, newColumnFilter(operator)]);
+        break;
+      case 'frequency':
+        setFilters([...filters, newFrequencyFilter(operator)]);
+        break;
+      default:
+        setFilters([...filters, newColumnFilter(operator)]);
     }
   };
 
   const removeFilter = (id: string) => {
+    if (filters.length <= 1) return; // Don't remove the last filter
     setFilters(filters.filter(filter => filter.id !== id));
   };
 
   const updateFilter = (id: string, field: string, value: any) => {
     setFilters(
-      filters.map(filter => 
-        filter.id === id ? { ...filter, [field]: value } : filter
-      )
+      filters.map(filter => {
+        if (filter.id === id) {
+          // Special handling for column selection in column filter
+          if (filter.type === 'column' && field === 'columnName') {
+            const columnOption = columnOptions.find(col => col.value === value);
+            return {
+              ...filter,
+              [field]: value,
+              isNumeric: columnOption?.type === 'numeric',
+              isDate: columnOption?.type === 'date'
+            };
+          }
+          return { ...filter, [field]: value };
+        }
+        return filter;
+      })
     );
   };
 
@@ -89,7 +403,6 @@ const EventBuilder: React.FC = () => {
       name: eventName.trim(),
       description: eventDescription.trim(),
       filters,
-      // In a real app, we would generate SQL here
       sql: `-- SQL would be generated based on filters`
     };
 
@@ -102,7 +415,7 @@ const EventBuilder: React.FC = () => {
     // Reset form
     setEventName('');
     setEventDescription('');
-    setFilters([newConceptFilter()]);
+    setFilters([newColumnFilter()]);
   };
 
   const cancelEdit = () => {
@@ -111,205 +424,6 @@ const EventBuilder: React.FC = () => {
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
-  };
-
-  const renderFilterContent = (filter: Filter, index: number) => {
-    if (filter.type === 'concept') {
-      return renderConceptFilter(filter as ConceptFilter, index);
-    } else {
-      return renderDateFilter(filter as DateFilter);
-    }
-  };
-
-  const renderConceptFilter = (filter: ConceptFilter, index: number) => {
-    return (
-      <div className="grid grid-cols-1 gap-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <div>
-            <label className="block text-sm font-medium mb-1">Table</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={filter.domain}
-              onChange={(e) => updateFilter(filter.id, 'domain', e.target.value)}
-            >
-              {domainOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Column</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={filter.column || 'concept_name'}
-              onChange={(e) => updateFilter(filter.id, 'column', e.target.value)}
-            >
-              <option value="concept_name">Concept Name</option>
-              <option value="concept_id">Concept ID</option>
-              <option value="value_as_number">Value as Number</option>
-              <option value="value_as_concept">Value as Concept</option>
-              <option value="start_date">Start Date</option>
-              <option value="end_date">End Date</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Operator</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={filter.operator || 'equals'}
-              onChange={(e) => updateFilter(filter.id, 'operator', e.target.value)}
-            >
-              <option value="equals">= (equals)</option>
-              <option value="not_equals">!= (not equals)</option>
-              <option value="contains">CONTAINS</option>
-              <option value="greater_than">&gt; (greater than)</option>
-              <option value="less_than">&lt; (less than)</option>
-              <option value="greater_equals">&gt;= (greater equals)</option>
-              <option value="less_equals">&lt;= (less equals)</option>
-              <option value="between">BETWEEN</option>
-              <option value="in">IN</option>
-              <option value="not_in">NOT IN</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {filter.operator === 'between' ? (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Min Value</label>
-                <input
-                  type={filter.column?.includes('date') ? "date" : "text"}
-                  className="w-full p-2 border rounded"
-                  value={filter.minValue || ''}
-                  onChange={(e) => updateFilter(filter.id, 'minValue', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Max Value</label>
-                <input
-                  type={filter.column?.includes('date') ? "date" : "text"}
-                  className="w-full p-2 border rounded"
-                  value={filter.maxValue || ''}
-                  onChange={(e) => updateFilter(filter.id, 'maxValue', e.target.value)}
-                />
-              </div>
-            </>
-          ) : filter.operator === 'in' || filter.operator === 'not_in' ? (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Values (comma separated)</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={filter.value || ''}
-                placeholder="value1, value2, value3"
-                onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-              />
-            </div>
-          ) : (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Value</label>
-              <input
-                type={filter.column?.includes('date') ? "date" : 
-                     filter.column?.includes('number') ? "number" : "text"}
-                className="w-full p-2 border rounded"
-                value={filter.value || ''}
-                onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderDateFilter = (filter: DateFilter) => {
-    return (
-      <div className="p-3 border rounded bg-gray-50">
-        <div className="mb-2">
-          <label className="block text-sm font-medium mb-1">Date Filter Type</label>
-          <div className="flex gap-4">
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                checked={filter.dateType === 'absolute'}
-                onChange={() => updateFilter(filter.id, 'dateType', 'absolute')}
-                className="mr-2"
-              />
-              Absolute Date
-            </label>
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                checked={filter.dateType === 'relative'}
-                onChange={() => updateFilter(filter.id, 'dateType', 'relative')}
-                className="mr-2"
-              />
-              Relative to Event
-            </label>
-          </div>
-        </div>
-        
-        {filter.dateType === 'absolute' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1">Start Date</label>
-              <input
-                type="date"
-                className="w-full p-2 border rounded"
-                value={filter.startDate || ''}
-                onChange={(e) => updateFilter(filter.id, 'startDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">End Date</label>
-              <input
-                type="date"
-                className="w-full p-2 border rounded"
-                value={filter.endDate || ''}
-                onChange={(e) => updateFilter(filter.id, 'endDate', e.target.value)}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1">Reference Event</label>
-              <select
-                className="w-full p-2 border rounded"
-                value={filter.referencedEventId || ''}
-                onChange={(e) => updateFilter(filter.id, 'referencedEventId', e.target.value)}
-              >
-                <option value="">Select Event</option>
-                {state.events.map(event => (
-                  <option key={event.id} value={event.id}>{event.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Days Before</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={filter.daysBefore || ''}
-                onChange={(e) => updateFilter(filter.id, 'daysBefore', parseInt(e.target.value) || undefined)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Days After</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={filter.daysAfter || ''}
-                onChange={(e) => updateFilter(filter.id, 'daysAfter', parseInt(e.target.value) || undefined)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -363,8 +477,8 @@ const EventBuilder: React.FC = () => {
                   value={filterToAdd}
                   onChange={(e) => setFilterToAdd(e.target.value as FilterType)}
                 >
-                  <option value="concept">Concept Filter</option>
-                  <option value="date">Date Filter</option>
+                  <option value="column">Column Filter</option>
+                  <option value="frequency">Frequency Filter</option>
                 </select>
                 <button 
                   onClick={addFilter}
@@ -376,36 +490,15 @@ const EventBuilder: React.FC = () => {
             </div>
             
             {filters.map((filter, index) => (
-              <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium">
-                    {filter.type === 'concept' ? 'Concept Filter' : 'Date Filter'} {index + 1}
-                  </span>
-                  <button 
-                    onClick={() => removeFilter(filter.id)}
-                    className="text-red-500"
-                    disabled={filters.length === 1}
-                  >
-                    Remove
-                  </button>
-                </div>
-                
-                {index > 0 && (
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Logical Operator</label>
-                    <select
-                      className="w-full p-2 border rounded"
-                      value={filter.logicalOperator || 'AND'}
-                      onChange={(e) => updateFilter(filter.id, 'logicalOperator', e.target.value)}
-                    >
-                      <option value="AND">AND</option>
-                      <option value="OR">OR</option>
-                    </select>
-                  </div>
-                )}
-                
-                {renderFilterContent(filter, index)}
-              </div>
+              <FilterWrapper
+                key={filter.id}
+                filter={filter}
+                index={index}
+                updateFilter={updateFilter}
+                removeFilter={removeFilter}
+                showLogicalOperator={index > 0}
+                events={state.events}
+              />
             ))}
           </div>
           
