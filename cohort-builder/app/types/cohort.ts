@@ -1,4 +1,4 @@
-export type FilterType = 'column' | 'frequency';
+export type FilterType = 'column' | 'occurrence';
 
 export interface BaseFilter {
   id: string;
@@ -21,15 +21,15 @@ export interface ColumnFilter extends BaseFilter {
 }
 
 // New filter type for frequency filtering
-export interface FrequencyFilter extends BaseFilter {
-  type: 'frequency';
-  frequencyType?: 'index' | 'window';
+export interface OccurrenceFilter extends BaseFilter {
+  type: 'occurrence';
+  occurrenceType?: 'index' | 'window';
   index?: number | 'last'; // For index type: 1st (1), 2nd (2), etc., or 'last'
   windowType?: 'rolling' | 'fixed'; // For window type
   windowDays?: number; // Number of days for the window
 }
 
-export type Filter = ColumnFilter | FrequencyFilter;
+export type Filter = ColumnFilter | OccurrenceFilter;
 
 export interface Event {
   id: string;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCohort } from '../contexts/CohortContext';
-import { Filter, FilterType, Event, ColumnFilter, FrequencyFilter } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter, OccurrenceFilter } from '../types/cohort';
 import { v4 as uuidv4 } from 'uuid';
 
 const domainOptions = [
@@ -163,9 +163,9 @@ const ColumnFilterComponent: React.FC<{
   );
 };
 
-// Component for Frequency Filters
-const FrequencyFilterComponent: React.FC<{
-  filter: FrequencyFilter;
+// Component for Occurrence Filters
+const OccurrenceFilterComponent: React.FC<{
+  filter: OccurrenceFilter;
   updateFilter: (id: string, field: string, value: any) => void;
 }> = ({ filter, updateFilter }) => {
   const handleUpdate = (field: string, value: any) => {
@@ -177,13 +177,13 @@ const FrequencyFilterComponent: React.FC<{
       <EntitySelector entity={filter.entity} updateFilter={handleUpdate} />
       <div className="p-3 border rounded bg-gray-50">
         <div className="mb-2">
-          <label className="block text-sm font-medium mb-1">Frequency Type</label>
+          <label className="block text-sm font-medium mb-1">Occurrence Type</label>
           <div className="flex gap-4">
             <label className="inline-flex items-center">
               <input
                 type="radio"
-                checked={filter.frequencyType === 'index'}
-                onChange={() => handleUpdate('frequencyType', 'index')}
+                checked={filter.occurrenceType === 'index'}
+                onChange={() => handleUpdate('occurrenceType', 'index')}
                 className="mr-2"
               />
               Index
@@ -191,8 +191,8 @@ const FrequencyFilterComponent: React.FC<{
             <label className="inline-flex items-center">
               <input
                 type="radio"
-                checked={filter.frequencyType === 'window'}
-                onChange={() => handleUpdate('frequencyType', 'window')}
+                checked={filter.occurrenceType === 'window'}
+                onChange={() => handleUpdate('occurrenceType', 'window')}
                 className="mr-2"
               />
               Window
@@ -200,7 +200,7 @@ const FrequencyFilterComponent: React.FC<{
           </div>
         </div>
         
-        {filter.frequencyType === 'index' ? (
+        {filter.occurrenceType === 'index' ? (
           <div>
             <label className="block text-sm font-medium mb-1">Select Index</label>
             <select
@@ -263,7 +263,7 @@ const FilterWrapper: React.FC<{
       <div className="flex justify-between mb-2">
         <span className="font-medium">
           {filter.type === 'column' ? 'Column Filter' :
-           'Frequency Filter'} {index + 1}
+           'Occurrence Filter'} {index + 1}
         </span>
         <button 
           onClick={() => removeFilter(filter.id)}
@@ -294,9 +294,9 @@ const FilterWrapper: React.FC<{
         />
       )}
       
-      {filter.type === 'frequency' && (
-        <FrequencyFilterComponent 
-          filter={filter as FrequencyFilter} 
+      {filter.type === 'occurrence' && (
+        <OccurrenceFilterComponent 
+          filter={filter as OccurrenceFilter} 
           updateFilter={updateFilter}
         />
       )}
@@ -322,13 +322,13 @@ const EventBuilder: React.FC = () => {
     columnName: columnOptions[0].value,
   });
 
-  // Generate empty frequency filter template
-  const newFrequencyFilter = (operator?: 'AND' | 'OR'): FrequencyFilter => ({
+  // Generate empty occurrence filter template
+  const newOccurrenceFilter = (operator?: 'AND' | 'OR'): OccurrenceFilter => ({
     id: uuidv4(),
-    type: 'frequency',
+    type: 'occurrence',
     logicalOperator: operator,
     entity: domainOptions[0].value,
-    frequencyType: 'index',
+    occurrenceType: 'index',
     index: 1,
   });
 
@@ -353,8 +353,8 @@ const EventBuilder: React.FC = () => {
       case 'column':
         setFilters([...filters, newColumnFilter(operator)]);
         break;
-      case 'frequency':
-        setFilters([...filters, newFrequencyFilter(operator)]);
+      case 'occurrence':
+        setFilters([...filters, newOccurrenceFilter(operator)]);
         break;
       default:
         setFilters([...filters, newColumnFilter(operator)]);
@@ -478,7 +478,7 @@ const EventBuilder: React.FC = () => {
                   onChange={(e) => setFilterToAdd(e.target.value as FilterType)}
                 >
                   <option value="column">Column Filter</option>
-                  <option value="frequency">Frequency Filter</option>
+                  <option value="occurrence">Occurrence Filter</option>
                 </select>
                 <button 
                   onClick={addFilter}

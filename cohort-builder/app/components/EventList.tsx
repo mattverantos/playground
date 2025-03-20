@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCohort } from '../contexts/CohortContext';
-import { Event, Filter } from '../types/cohort';
+import { ColumnFilter, Event, Filter, OccurrenceFilter } from '../types/cohort';
 
 const EventList: React.FC = () => {
   const { state, dispatch } = useCohort();
@@ -28,19 +28,42 @@ const EventList: React.FC = () => {
   };
   
   const renderFilterSummary = (event: Event) => {
+    // Helper function to get ordinal suffix
+    const getOrdinalSuffix = (num: number): string => {
+      const j = num % 10;
+      const k = num % 100;
+      if (j === 1 && k !== 11) return "st";
+      if (j === 2 && k !== 12) return "nd";
+      if (j === 3 && k !== 13) return "rd";
+      return "th";
+    };
+    
     return (
       <div className="text-sm text-gray-600">
         {event.filters.map((filter: Filter, index: number) => (
           <div key={filter.id} className="mb-1">
             {index > 0 && <span className="font-semibold">{filter.logicalOperator} </span>}
-            {filter.type === 'concept' ? (
-              <span>Concept: {filter.domain} {filter.operator} {filter.value || filter.minValue}</span>
+            
+            {filter.type === 'column' ? (
+              <span>
+                {(filter as ColumnFilter).entity && `${(filter as ColumnFilter).entity}: `}
+                {(filter as ColumnFilter).columnName || 'Column'}{' '}
+                {(filter as ColumnFilter).operator && ` ${(filter as ColumnFilter).operator}`}{' '}
+                {(filter as ColumnFilter).isNumeric 
+                  ? `${(filter as ColumnFilter).minValue || (filter as ColumnFilter).value || ''}${(filter as ColumnFilter).maxValue ? ' to ' + (filter as ColumnFilter).maxValue : ''}`
+                  : (filter as ColumnFilter).value || ''
+                }
+              </span>
             ) : (
-              <span>Date: {filter.dateType} {
-                filter.dateType === 'absolute' ? 
-                  `${filter.startDate} to ${filter.endDate}` : 
-                  `±${filter.daysBefore || 0}/${filter.daysAfter || 0} days from ${eventMap[filter.referencedEventId as string]?.name}`
-              }</span>
+              <span>
+                Occurrence: {(filter as OccurrenceFilter).occurrenceType === 'index' 
+                  ? `${(filter as OccurrenceFilter).index === 'last' 
+                      ? 'Last' 
+                      : `${(filter as OccurrenceFilter).index}${getOrdinalSuffix(Number((filter as OccurrenceFilter).index))}`
+                    } occurrence` 
+                  : `${(filter as OccurrenceFilter).windowType || 'rolling'} window of ${(filter as OccurrenceFilter).windowDays || 0} days`
+                }
+              </span>
             )}
           </div>
         ))}
