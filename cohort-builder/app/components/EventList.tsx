@@ -75,7 +75,7 @@ const EventList: React.FC = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Defined Events</h2>
+      <h2 className="text-xl font-semibold mb-4">Events</h2>
       
       {state.events.length === 0 ? (
         <p className="text-gray-500">No events defined yet.</p>
