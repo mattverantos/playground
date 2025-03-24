@@ -26,7 +26,8 @@ const columnOptions = [
 const ColumnFilterComponent: React.FC<{
   filter: ColumnFilter;
   updateFilter: (id: string, field: string, value: any) => void;
-}> = ({ filter, updateFilter }) => {
+  events: Event[];
+}> = ({ filter, updateFilter, events }) => {
   const selectedColumn = columnOptions.find(col => col.value === filter.columnName);
   const isNumeric = selectedColumn?.type === 'numeric';
   const isDate = selectedColumn?.type === 'date';
@@ -76,6 +77,7 @@ const ColumnFilterComponent: React.FC<{
                   <option value="greater_than">&gt; (after)</option>
                   <option value="less_than">&lt; (before)</option>
                   <option value="between">BETWEEN</option>
+                  <option value="relative_to_event">RELATIVE TO EVENT</option>
                 </>
               ) : (
                 <>
@@ -124,6 +126,65 @@ const ColumnFilterComponent: React.FC<{
                 placeholder="value1, value2, value3"
                 onChange={(e) => handleUpdate('value', e.target.value)}
               />
+            </div>
+          ) : filter.operator === 'relative_to_event' ? (
+            <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Related Event</label>
+                  <select
+                    className="w-full p-2 border rounded"
+                    value={filter.relatedEventId || ''}
+                    onChange={(e) => handleUpdate('relatedEventId', e.target.value)}
+                  >
+                    <option value="">Select event...</option>
+                    {events.map(event => (
+                      <option key={event.id} value={event.id}>{event.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date Column</label>
+                  <select
+                    className="w-full p-2 border rounded"
+                    value={filter.relatedColumn || ''}
+                    onChange={(e) => handleUpdate('relatedColumn', e.target.value)}
+                    disabled={!filter.relatedEventId}
+                  >
+                    <option value="">Select column...</option>
+                    {columnOptions
+                      .filter(col => col.type === 'date')
+                      .map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))
+                    }
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Comparison</label>
+                  <select
+                    className="w-full p-2 border rounded"
+                    value={filter.dateComparison || 'before'}
+                    onChange={(e) => handleUpdate('dateComparison', e.target.value)}
+                  >
+                    <option value="before">Before</option>
+                    <option value="after">After</option>
+                    <option value="same_day">Same Day</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Days Offset (optional)</label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border rounded"
+                    placeholder="e.g. 30 for 30 days offset"
+                    value={filter.daysOffset || ''}
+                    onChange={(e) => handleUpdate('daysOffset', e.target.value ? parseInt(e.target.value) : '')}
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="md:col-span-2">
@@ -267,6 +328,7 @@ const FilterWrapper: React.FC<{
         <ColumnFilterComponent 
           filter={filter as ColumnFilter} 
           updateFilter={updateFilter}
+          events={events}
         />
       )}
       
@@ -289,6 +351,25 @@ const EventBuilder: React.FC = () => {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [filterToAdd, setFilterToAdd] = useState<FilterType>('column');
   const [isMinimized, setIsMinimized] = useState(false);
+
+  // Generate combined entity options (domain tables + existing events)
+  const getEntityOptions = () => {
+    // Start with standard domain options
+    const options = [...domainOptions];
+    
+    // Add saved events as entity options
+    state.events.forEach(event => {
+      // Prevent current event from selecting itself or duplicate options
+      if (!state.currentEvent || event.id !== state.currentEvent.id) {
+        options.push({
+          value: `event:${event.id}`,
+          label: `Event: ${event.name}`
+        });
+      }
+    });
+    
+    return options;
+  };
 
   // Generate empty column filter template
   const newColumnFilter = (operator?: 'AND' | 'OR'): ColumnFilter => ({
@@ -405,6 +486,9 @@ const EventBuilder: React.FC = () => {
     setIsMinimized(!isMinimized);
   };
 
+  // Get combined entity options
+  const entityOptions = getEntityOptions();
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-4">
@@ -448,13 +532,13 @@ const EventBuilder: React.FC = () => {
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Entity (Table)</label>
+            <label className="block text-sm font-medium mb-1">Entity (Table or Event)</label>
             <select
               className="w-full p-2 border rounded"
               value={eventEntity}
               onChange={(e) => setEventEntity(e.target.value)}
             >
-              {domainOptions.map(option => (
+              {entityOptions.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>

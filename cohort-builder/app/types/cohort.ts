@@ -13,17 +13,22 @@ export interface ColumnFilter extends BaseFilter {
   type: 'column';
   columnName?: string; // concept, concept type, related concept, etc.
   operator?: string;
-  value?: string;
-  minValue?: string;
-  maxValue?: string;
+  value?: string | number;
+  minValue?: string | number;
+  maxValue?: string | number;
   isNumeric?: boolean;
   isDate?: boolean;
+  // New fields for relative date comparison
+  relatedEventId?: string;
+  relatedColumn?: string;
+  dateComparison?: 'before' | 'after' | 'same_day';
+  daysOffset?: number;
 }
 
 // New filter type for frequency filtering
 export interface OccurrenceFilter extends BaseFilter {
   type: 'occurrence';
-  occurrenceType?: 'index' | 'window';
+  occurrenceType: 'index' | 'window';
   index?: number | 'last'; // For index type: 1st (1), 2nd (2), etc., or 'last'
   windowType?: 'rolling' | 'fixed'; // For window type
   windowDays?: number; // Number of days for the window
