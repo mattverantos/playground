@@ -37,6 +37,7 @@ const FilterWrapper: React.FC<{
             >
               <option value="AND">AND</option>
               <option value="OR">OR</option>
+              <option value="NOT">NOT</option>
             </select>
           </div>
         )}

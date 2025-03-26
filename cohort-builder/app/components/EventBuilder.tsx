@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCohort } from '../contexts/CohortContext';
 import { columnOptions } from './ColumnFilter';
 import FilterWrapper from './FilterWrapper';
-import { Filter, FilterType, Event, ColumnFilter, OccurrenceFilter } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter, OccurrenceFilter, FilterOperator } from '../types/cohort';
 import { v4 as uuidv4 } from 'uuid';
 
 const domainOptions = [
@@ -19,10 +19,12 @@ const EventBuilder: React.FC = () => {
   
   const [eventName, setEventName] = useState('');
   const [eventDescription, setEventDescription] = useState('');
-  const [eventEntity, setEventEntity] = useState(domainOptions[0].value);
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [filterToAdd, setFilterToAdd] = useState<FilterType>('column');
   const [isMinimized, setIsMinimized] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Generate combined entity options (domain tables + existing events)
   const getEntityOptions = () => {
@@ -34,7 +36,7 @@ const EventBuilder: React.FC = () => {
       // Prevent current event from selecting itself or duplicate options
       if (!state.currentEvent || event.id !== state.currentEvent.id) {
         options.push({
-          value: `event:${event.id}`,
+          value: event.id,
           label: `Event: ${event.name}`
         });
       }
@@ -44,7 +46,7 @@ const EventBuilder: React.FC = () => {
   };
 
   // Generate empty column filter template
-  const newColumnFilter = (operator?: 'AND' | 'OR'): ColumnFilter => ({
+  const newColumnFilter = (operator?: FilterOperator): ColumnFilter => ({
     id: uuidv4(),
     type: 'column',
     logicalOperator: operator,
@@ -52,7 +54,7 @@ const EventBuilder: React.FC = () => {
   });
 
   // Generate empty occurrence filter template
-  const newOccurrenceFilter = (operator?: 'AND' | 'OR'): OccurrenceFilter => ({
+  const newOccurrenceFilter = (operator?: FilterOperator): OccurrenceFilter => ({
     id: uuidv4(),
     type: 'occurrence',
     logicalOperator: operator,
@@ -65,13 +67,18 @@ const EventBuilder: React.FC = () => {
     if (state.currentEvent) {
       setEventName(state.currentEvent.name);
       setEventDescription(state.currentEvent.description || '');
-      setEventEntity(state.currentEvent.entity || domainOptions[0].value);
+      // Handle both legacy single entity and new multiple entities format
+      if (state.currentEvent.entities) {
+        setSelectedEntities([...state.currentEvent.entities]);
+      } else {
+        setSelectedEntities([]);
+      }
       setFilters([...state.currentEvent.filters]);
     } else {
       // Reset form when no current event
       setEventName('');
       setEventDescription('');
-      setEventEntity(domainOptions[0].value);
+      setSelectedEntities([]);
       setFilters([newColumnFilter()]);
     }
   }, [state.currentEvent]);
@@ -128,11 +135,16 @@ const EventBuilder: React.FC = () => {
       return;
     }
 
+    if (selectedEntities.length === 0) {
+      alert('Please select at least one entity');
+      return;
+    }
+
     const event: Event = {
       id: state.currentEvent?.id || uuidv4(),
       name: eventName.trim(),
       description: eventDescription.trim(),
-      entity: eventEntity,
+      entities: selectedEntities,
       filters,
       sql: `-- SQL would be generated based on filters`
     };
@@ -146,8 +158,22 @@ const EventBuilder: React.FC = () => {
     // Reset form
     setEventName('');
     setEventDescription('');
-    setEventEntity(domainOptions[0].value);
+    setSelectedEntities([]);
     setFilters([newColumnFilter()]);
+  };
+
+  const handleEntityToggle = (entityValue: string) => {
+    if (selectedEntities.includes(entityValue)) {
+      // Remove entity if already selected
+      setSelectedEntities(selectedEntities.filter(e => e !== entityValue));
+    } else {
+      // Add entity if not already selected
+      setSelectedEntities([...selectedEntities, entityValue]);
+    }
+  };
+
+  const removeEntity = (entityValue: string) => {
+    setSelectedEntities(selectedEntities.filter(e => e !== entityValue));
   };
 
   const cancelEdit = () => {
@@ -157,6 +183,23 @@ const EventBuilder: React.FC = () => {
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
   };
+
+  // Add effect to handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   // Get combined entity options
   const entityOptions = getEntityOptions();
@@ -204,16 +247,69 @@ const EventBuilder: React.FC = () => {
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Entity (Table or Event)</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={eventEntity}
-              onChange={(e) => setEventEntity(e.target.value)}
-            >
-              {entityOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium mb-2">Entities (Tables or Events)</label>
+            
+            {/* Entity selection tags */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedEntities.map(entity => {
+                const option = entityOptions.find(opt => opt.value === entity);
+                return (
+                  <div key={entity} className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                    <span>{option?.label || entity}</span>
+                    <button 
+                      onClick={() => removeEntity(entity)}
+                      className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Entity dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="w-full flex items-center justify-between p-2 border rounded bg-white focus:ring-2 focus:ring-blue-300"
+              >
+                <span>Select entities...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform ${dropdownOpen ? 'transform rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              
+              {dropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {entityOptions.map(option => (
+                    <div 
+                      key={option.value}
+                      className={`p-2 cursor-pointer hover:bg-gray-100 ${selectedEntities.includes(option.value) ? 'bg-blue-50' : ''}`}
+                      onClick={() => {
+                        handleEntityToggle(option.value);
+                        // Don't close dropdown to allow multiple selections
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedEntities.includes(option.value)}
+                          onChange={() => {}} // Handle changes through the parent div's onClick
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <span className="ml-2">{option.label}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <p className="text-sm text-gray-500 mt-1">
+              Click items to select multiple entities (treated as OR condition)
+            </p>
           </div>
           
           <div className="mb-4">

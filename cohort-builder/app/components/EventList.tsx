@@ -2,6 +2,43 @@ import React from 'react';
 import { useCohort } from '../contexts/CohortContext';
 import { ColumnFilter, Event, Filter, OccurrenceFilter } from '../types/cohort';
 
+
+const getEntityNames = (eventMap: any, entities: string[]): React.ReactNode => {
+  if (entities.length === 0) return <span className="italic text-gray-500">None</span>;
+  
+  return (
+    <>
+      {entities.map((e, index) => {
+        // Check if this is an event reference or direct entity name
+        const isEventReference = eventMap[e] !== undefined;
+        
+        // Add comma if not the last item
+        const separator = index < entities.length - 1 ? <span>, </span> : null;
+        
+        if (isEventReference) {
+          // For event references, return a badge with amber colors (matching other entity badges)
+          return (
+            <React.Fragment key={e}>
+              <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full">
+                {eventMap[e]?.name || e}
+              </span>
+              {separator}
+            </React.Fragment>
+          );
+        } else {
+          // For direct entities, return bold text
+          return (
+            <React.Fragment key={e}>
+              <span className="font-bold">{e}</span>
+              {separator}
+            </React.Fragment>
+          );
+        }
+      })}
+    </>
+  );
+};
+
 const EventList: React.FC = () => {
   const { state, dispatch } = useCohort();
   
@@ -26,6 +63,105 @@ const EventList: React.FC = () => {
     if (state.exclusionCriteria.includes(eventId)) return 'exclusion';
     return 'none';
   };
+
+  // Find events that reference the given event
+  const getEventReferences = (eventId: string): Event[] => {
+    return state.events.filter(event => {
+      // Check if this event references the target event in its filters
+      return event.filters.some(filter => 
+        filter.type === 'column' && 
+        (filter as ColumnFilter).relatedEventId === eventId
+      );
+    });
+  };
+  
+  // Find events that use the given event in their entities array
+  const getEntityReferences = (eventId: string): Event[] => {
+    return state.events.filter(event => 
+      event.id !== eventId && event.entities.includes(eventId)
+    );
+  };
+  
+  // Find events that are referenced by the given event
+  const getEventsReferencedBy = (event: Event): Event[] => {
+    const referencedEventIds = event.filters
+      .filter(filter => filter.type === 'column')
+      .map(filter => (filter as ColumnFilter).relatedEventId)
+      .filter(Boolean); // Remove undefined/null values
+    
+    return state.events.filter(e => referencedEventIds.includes(e.id));
+  };
+  
+  // Find events that are used in the given event's entities array
+  const getEntitiesReferencedBy = (event: Event): Event[] => {
+    return state.events.filter(e => 
+      e.id !== event.id && event.entities.includes(e.id)
+    );
+  };
+  
+  // Render badges for events that reference this event
+  const renderEventReferenceBadges = (eventId: string) => {
+    const referencingEvents = getEventReferences(eventId);
+    const entityReferencingEvents = getEntityReferences(eventId);
+    
+    if (referencingEvents.length === 0 && entityReferencingEvents.length === 0) return null;
+    
+    return (
+      <div className="mt-2 flex flex-wrap gap-1">
+        <span className="text-xs text-gray-500 mr-1">Referenced by:</span>
+        {referencingEvents.map(event => (
+          <span 
+            key={`filter-${event.id}`}
+            className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
+            title={`This event is referenced by filters in "${event.name}"`}
+          >
+            {event.name}
+          </span>
+        ))}
+        {entityReferencingEvents.map(event => (
+          <span 
+            key={`entity-${event.id}`}
+            className="px-2 py-0.5 bg-teal-100 text-teal-800 text-xs rounded-full"
+            title={`This event is used as an entity in "${event.name}"`}
+          >
+            {event.name} (entity)
+          </span>
+        ))}
+      </div>
+    );
+  };
+  
+  // Render badges for events referenced by this event
+  const renderReferencingEventBadges = (event: Event) => {
+    const referencedEvents = getEventsReferencedBy(event);
+    const entityEvents = getEntitiesReferencedBy(event);
+    
+    if (referencedEvents.length === 0 && entityEvents.length === 0) return null;
+    
+    return (
+      <div className="mt-2 flex flex-wrap gap-1">
+        <span className="text-xs text-gray-500 mr-1">References:</span>
+        {referencedEvents.map(refEvent => (
+          <span 
+            key={`filter-${refEvent.id}`}
+            className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full"
+            title={`This event references "${refEvent.name}" in its filters`}
+          >
+            {refEvent.name}
+          </span>
+        ))}
+        {entityEvents.map(entEvent => (
+          <span 
+            key={`entity-${entEvent.id}`}
+            className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full"
+            title={`This event uses "${entEvent.name}" as an entity`}
+          >
+            {entEvent.name} (entity)
+          </span>
+        ))}
+      </div>
+    );
+  };
   
   const renderFilterSummary = (event: Event) => {
     // Helper function to get ordinal suffix
@@ -37,11 +173,13 @@ const EventList: React.FC = () => {
       if (j === 3 && k !== 13) return "rd";
       return "th";
     };
-    
+    console.log('event', event);
     return (
       <div className="text-sm text-gray-600">
-        {/* Display entity first */}
-        <div className="font-medium mb-1">Entity: {event.entity}</div>
+        {/* Display entity with badges and bold text */}
+        <div className="font-medium mb-1 flex items-center gap-1">
+          <span>Entity:</span> {getEntityNames(eventMap, event.entities)}
+        </div>
         
         {event.filters.map((filter: Filter, index: number) => (
           <div key={filter.id} className="mb-1">
@@ -49,11 +187,11 @@ const EventList: React.FC = () => {
             
             {filter.type === 'column' ? (
               <span>
-                {(filter as ColumnFilter).columnName || 'Column'}{' '}
-                {(filter as ColumnFilter).operator && ` ${(filter as ColumnFilter).operator}`}{' '}
-                {(filter as ColumnFilter).isNumeric 
-                  ? `${(filter as ColumnFilter).minValue || (filter as ColumnFilter).value || ''}${(filter as ColumnFilter).maxValue ? ' to ' + (filter as ColumnFilter).maxValue : ''}`
-                  : (filter as ColumnFilter).value || ''
+                {filter.columnName || 'Column'}{' '}
+                {filter.operator && ` ${filter.operator}`}{' '}
+                {filter.isNumeric 
+                  ? `${filter.minValue || filter.value || ''}${filter.maxValue ? ' to ' + filter.maxValue : ''}`
+                  : filter.value || ''
                 }
               </span>
             ) : (
@@ -91,6 +229,9 @@ const EventList: React.FC = () => {
                     <h3 className="font-medium">{event.name}</h3>
                     {event.description && <p className="text-sm text-gray-600">{event.description}</p>}
                     {renderFilterSummary(event)}
+                    {/* Add event reference badges at the bottom left */}
+                    {renderEventReferenceBadges(event.id)}
+                    {renderReferencingEventBadges(event)}
                   </div>
                   <div className="flex flex-col gap-3">
                     <div className="flex gap-2">

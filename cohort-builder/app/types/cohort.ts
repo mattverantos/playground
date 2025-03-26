@@ -1,10 +1,11 @@
 export type FilterType = 'column' | 'occurrence';
 
+export type FilterOperator = 'AND' | 'OR' | 'NOT';
+
 export interface BaseFilter {
   id: string;
   type: FilterType;
-  logicalOperator?: 'AND' | 'OR';
-  // entity property removed from here
+  logicalOperator?: FilterOperator;
 }
 
 
@@ -40,7 +41,7 @@ export interface Event {
   id: string;
   name: string;
   description: string;
-  entity: string; // Added entity property here
+  entities: string[];
   filters: Filter[];
   sql: string;
 }
