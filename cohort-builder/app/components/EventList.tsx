@@ -158,6 +158,21 @@ const EventList: React.FC = () => {
   };
   
   const renderFilterSummary = (event: Event) => {
+    // Helper function to format different operand types
+    const formatOperand = (operand: any): string => {
+      if (operand === null || operand === undefined) return '';
+      
+      // Check if operand is an EntityColumn object (has id and column properties)
+      if (typeof operand === 'object' && operand !== null && 'id' in operand && 'column' in operand) {
+        // Format EntityColumn as "id.column" or display the referenced event name if available
+        const eventName = eventMap[operand.id]?.name || operand.id;
+        return `${eventName}.${operand.column}`;
+      }
+      
+      // For strings and numbers, just convert to string
+      return String(operand);
+    };
+    
     return (
       <div className="text-sm text-gray-600">
         {/* Display entity with badges and bold text */}
@@ -169,19 +184,23 @@ const EventList: React.FC = () => {
           <div key={filter.id} className="mb-1">
             {index > 0 && <span className="font-semibold">{filter.logicalOperator} </span>}
             
-            {filter.type === 'column' && (
-              <span>
-                {filter.columnName || 'Column'}{' '}
-                {filter.operator && ` ${filter.operator}`}{' '}
-                {filter.operator === 'BETWEEN' && filter.operands && filter.operands.length >= 2 ? (
-                  `${filter.operands[0]} to ${filter.operands[1]}`
-                ) : filter.operator === 'IN' || filter.operator === 'NOT IN' ? (
-                  filter.operands ? filter.operands.join(', ') : ''
-                ) : (
-                  filter.operands && filter.operands.length > 0 ? filter.operands[0] : ''
-                )}
-              </span>
-            )}
+            {filter.type === 'column' && (() => {
+              // Cast the filter to ColumnFilter when type is 'column'
+              const colFilter = filter as ColumnFilter;
+              return (
+                <span>
+                  {colFilter.columnName || 'Column'}{' '}
+                  {colFilter.operator && ` ${colFilter.operator}`}{' '}
+                  {colFilter.operator === 'BETWEEN' && colFilter.operands && colFilter.operands.length >= 2 ? (
+                    `${formatOperand(colFilter.operands[0])} to ${formatOperand(colFilter.operands[1])}`
+                  ) : colFilter.operator === 'IN' || colFilter.operator === 'NOT IN' ? (
+                    colFilter.operands ? colFilter.operands.map(formatOperand).join(', ') : ''
+                  ) : (
+                    colFilter.operands && colFilter.operands.length > 0 ? formatOperand(colFilter.operands[0]) : ''
+                  )}
+                </span>
+              );
+            })()}
           </div>
         ))}
       </div>
