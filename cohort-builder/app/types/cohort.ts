@@ -2,40 +2,42 @@ export type FilterType = 'column' | 'occurrence';
 
 export type FilterOperator = 'AND' | 'OR' | 'NOT';
 
+export type ColumnType = 'date' | 'string' | 'number';
+
+export type ColumnOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | 'IN' | 'NOT IN' | 'BETWEEN';
+
+export type EntityColumn = {
+  id: string;
+  column: string;
+}
+
 export interface BaseFilter {
   id: string;
   type: FilterType;
   logicalOperator?: FilterOperator;
 }
 
+type Operand = string | number | EntityColumn;
 
 // New filter type for column filtering
 export interface ColumnFilter extends BaseFilter {
   type: 'column';
+  columnType: ColumnType;
   columnName?: string; // concept, concept type, related concept, etc.
-  operator?: string;
-  value?: string | number;
-  minValue?: string | number;
-  maxValue?: string | number;
-  isNumeric?: boolean;
-  isDate?: boolean;
-  // New fields for relative date comparison
-  relatedEventId?: string;
-  relatedColumn?: string;
-  dateComparison?: 'before' | 'after' | 'same_day';
-  daysOffset?: number;
+  operator?: ColumnOperator;
+  operands?: [Operand] | [Operand, Operand];
 }
 
 // New filter type for frequency filtering
-export interface OccurrenceFilter extends BaseFilter {
-  type: 'occurrence';
-  occurrenceType: 'index' | 'window';
-  index?: number | 'last'; // For index type: 1st (1), 2nd (2), etc., or 'last'
-  windowType?: 'rolling' | 'fixed'; // For window type
-  windowDays?: number; // Number of days for the window
-}
+// export interface OccurrenceFilter extends BaseFilter {
+//   type: 'occurrence';
+//   occurrenceType: 'index' | 'window';
+//   index?: number | 'last'; // For index type: 1st (1), 2nd (2), etc., or 'last'
+//   windowType?: 'rolling' | 'fixed'; // For window type
+//   windowDays?: number; // Number of days for the window
+// }
 
-export type Filter = ColumnFilter | OccurrenceFilter;
+export type Filter = ColumnFilter;
 
 export interface Event {
   id: string;

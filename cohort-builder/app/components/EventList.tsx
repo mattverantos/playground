@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCohort } from '../contexts/CohortContext';
-import { ColumnFilter, Event, Filter, OccurrenceFilter } from '../types/cohort';
+import { ColumnFilter, Event, Filter } from '../types/cohort';
 
 
 const getEntityNames = (eventMap: any, entities: string[]): React.ReactNode => {
@@ -59,6 +59,7 @@ const EventList: React.FC = () => {
   
   // Add function to determine event's criteria state
   const getEventState = (eventId: string) => {
+
     if (state.inclusionCriteria.includes(eventId)) return 'inclusion';
     if (state.exclusionCriteria.includes(eventId)) return 'exclusion';
     return 'none';
@@ -66,13 +67,9 @@ const EventList: React.FC = () => {
 
   // Find events that reference the given event
   const getEventReferences = (eventId: string): Event[] => {
-    return state.events.filter(event => {
-      // Check if this event references the target event in its filters
-      return event.filters.some(filter => 
-        filter.type === 'column' && 
-        (filter as ColumnFilter).relatedEventId === eventId
-      );
-    });
+    // Since relatedEventId is no longer in the type, we need to modify this
+    // This can be modified based on how you want to implement event references
+    return [];
   };
   
   // Find events that use the given event in their entities array
@@ -84,12 +81,9 @@ const EventList: React.FC = () => {
   
   // Find events that are referenced by the given event
   const getEventsReferencedBy = (event: Event): Event[] => {
-    const referencedEventIds = event.filters
-      .filter(filter => filter.type === 'column')
-      .map(filter => (filter as ColumnFilter).relatedEventId)
-      .filter(Boolean); // Remove undefined/null values
-    
-    return state.events.filter(e => referencedEventIds.includes(e.id));
+    // Since relatedEventId is no longer in the type, we need to modify this
+    // This can be modified based on how you want to implement event references
+    return [];
   };
   
   // Find events that are used in the given event's entities array
@@ -164,16 +158,6 @@ const EventList: React.FC = () => {
   };
   
   const renderFilterSummary = (event: Event) => {
-    // Helper function to get ordinal suffix
-    const getOrdinalSuffix = (num: number): string => {
-      const j = num % 10;
-      const k = num % 100;
-      if (j === 1 && k !== 11) return "st";
-      if (j === 2 && k !== 12) return "nd";
-      if (j === 3 && k !== 13) return "rd";
-      return "th";
-    };
-    console.log('event', event);
     return (
       <div className="text-sm text-gray-600">
         {/* Display entity with badges and bold text */}
@@ -185,24 +169,17 @@ const EventList: React.FC = () => {
           <div key={filter.id} className="mb-1">
             {index > 0 && <span className="font-semibold">{filter.logicalOperator} </span>}
             
-            {filter.type === 'column' ? (
+            {filter.type === 'column' && (
               <span>
                 {filter.columnName || 'Column'}{' '}
                 {filter.operator && ` ${filter.operator}`}{' '}
-                {filter.isNumeric 
-                  ? `${filter.minValue || filter.value || ''}${filter.maxValue ? ' to ' + filter.maxValue : ''}`
-                  : filter.value || ''
-                }
-              </span>
-            ) : (
-              <span>
-                Occurrence: {(filter as OccurrenceFilter).occurrenceType === 'index' 
-                  ? `${(filter as OccurrenceFilter).index === 'last' 
-                      ? 'Last' 
-                      : `${(filter as OccurrenceFilter).index}${getOrdinalSuffix(Number((filter as OccurrenceFilter).index))}`
-                    } occurrence` 
-                  : `${(filter as OccurrenceFilter).windowType || 'rolling'} window of ${(filter as OccurrenceFilter).windowDays || 0} days`
-                }
+                {filter.operator === 'BETWEEN' && filter.operands && filter.operands.length >= 2 ? (
+                  `${filter.operands[0]} to ${filter.operands[1]}`
+                ) : filter.operator === 'IN' || filter.operator === 'NOT IN' ? (
+                  filter.operands ? filter.operands.join(', ') : ''
+                ) : (
+                  filter.operands && filter.operands.length > 0 ? filter.operands[0] : ''
+                )}
               </span>
             )}
           </div>

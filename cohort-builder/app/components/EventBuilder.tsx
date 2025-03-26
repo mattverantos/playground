@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useCohort } from '../contexts/CohortContext';
 import { columnOptions } from './ColumnFilter';
 import FilterWrapper from './FilterWrapper';
-import { Filter, FilterType, Event, ColumnFilter, OccurrenceFilter, FilterOperator } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter, FilterOperator } from '../types/cohort';
 import { v4 as uuidv4 } from 'uuid';
 
 const domainOptions = [
@@ -21,7 +21,6 @@ const EventBuilder: React.FC = () => {
   const [eventDescription, setEventDescription] = useState('');
   const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
-  const [filterToAdd, setFilterToAdd] = useState<FilterType>('column');
   const [isMinimized, setIsMinimized] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,15 +50,9 @@ const EventBuilder: React.FC = () => {
     type: 'column',
     logicalOperator: operator,
     columnName: columnOptions[0].value,
-  });
-
-  // Generate empty occurrence filter template
-  const newOccurrenceFilter = (operator?: FilterOperator): OccurrenceFilter => ({
-    id: uuidv4(),
-    type: 'occurrence',
-    logicalOperator: operator,
-    occurrenceType: 'index',
-    index: 1,
+    columnType: 'string',
+    operator: '=',
+    operands: []
   });
 
   useEffect(() => {
@@ -85,17 +78,7 @@ const EventBuilder: React.FC = () => {
 
   const addFilter = () => {
     const operator = filters.length > 0 ? 'AND' : undefined;
-    
-    switch (filterToAdd) {
-      case 'column':
-        setFilters([...filters, newColumnFilter(operator)]);
-        break;
-      case 'occurrence':
-        setFilters([...filters, newOccurrenceFilter(operator)]);
-        break;
-      default:
-        setFilters([...filters, newColumnFilter(operator)]);
-    }
+    setFilters([...filters, newColumnFilter(operator)]);
   };
 
   const removeFilter = (id: string) => {
@@ -113,8 +96,8 @@ const EventBuilder: React.FC = () => {
             return {
               ...filter,
               [field]: value,
-              isNumeric: columnOption?.type === 'numeric',
-              isDate: columnOption?.type === 'date'
+              columnType: columnOption?.type === 'numeric' ? 'number' : 
+                         columnOption?.type === 'date' ? 'date' : 'string'
             };
           }
           return { ...filter, [field]: value };
@@ -316,14 +299,6 @@ const EventBuilder: React.FC = () => {
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-lg font-medium">Filters</h3>
               <div className="flex gap-2">
-                <select 
-                  className="p-1 border rounded text-sm"
-                  value={filterToAdd}
-                  onChange={(e) => setFilterToAdd(e.target.value as FilterType)}
-                >
-                  <option value="column">Column Filter</option>
-                  <option value="occurrence">Occurrence Filter</option>
-                </select>
                 <button 
                   onClick={addFilter}
                   className="px-2 py-1 bg-blue-500 text-white rounded text-sm"

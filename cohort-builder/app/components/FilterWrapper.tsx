@@ -1,6 +1,5 @@
-import { Filter, FilterType, Event, ColumnFilter, OccurrenceFilter } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter } from '../types/cohort';
 
-import OccurrenceFilterComponent from "./OccurrenceFilter";
 import ColumnFilterComponent from "./ColumnFilter";
 
 // Filter Wrapper Component
@@ -16,8 +15,7 @@ const FilterWrapper: React.FC<{
       <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
         <div className="flex justify-between mb-2">
           <span className="font-medium">
-            {filter.type === 'column' ? 'Column Filter' :
-             'Occurrence Filter'} {index + 1}
+            {filter.type === 'column' ? 'Column Filter' : 'Filter'} {index + 1}
           </span>
           <button 
             onClick={() => removeFilter(filter.id)}
@@ -47,13 +45,6 @@ const FilterWrapper: React.FC<{
             filter={filter as ColumnFilter} 
             updateFilter={updateFilter}
             events={events}
-          />
-        )}
-        
-        {filter.type === 'occurrence' && (
-          <OccurrenceFilterComponent 
-            filter={filter as OccurrenceFilter} 
-            updateFilter={updateFilter}
           />
         )}
       </div>
