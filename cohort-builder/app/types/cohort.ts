@@ -36,7 +36,7 @@ export interface BaseFilter {
   logicalOperator?: FilterOperator;
 }
 
-type Operand = string | number | EntityColumn;
+export type Operand = string | number | EntityColumn;
 
 // New filter type for column filtering
 export interface ColumnFilter extends BaseFilter {
