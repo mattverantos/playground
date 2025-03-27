@@ -4,11 +4,30 @@ export type FilterOperator = 'AND' | 'OR' | 'NOT';
 
 export type ColumnType = 'date' | 'string' | 'number';
 
+export type ColumnFunction = 'ADD' | 'SUBTRACT' | 'MULTIPLY' | 'DIVIDE' | 'CONCAT';
+
 export type ColumnOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | 'IN' | 'NOT IN' | 'BETWEEN';
+
+export enum Entity {
+  CONDITION = 'condition',
+  DRUG = 'drug',
+  MEASUREMENT = 'measurement',
+  PROCEDURE = 'procedure',
+  VISIT = 'visit',
+  DEMOGRAPHIC = 'demographic',
+  OBSERVATION = 'observation',
+}
 
 export type EntityColumn = {
   id: string;
   column: string;
+}
+
+export type ComputedColumn = {
+  id: string;
+  name: string;
+  function: ColumnFunction;
+  operands: Operand[];
 }
 
 export interface BaseFilter {
@@ -25,7 +44,7 @@ export interface ColumnFilter extends BaseFilter {
   columnType: ColumnType;
   columnName?: string; // concept, concept type, related concept, etc.
   operator?: ColumnOperator;
-  operands?: [Operand] | [Operand, Operand];
+  operands?: [] | [Operand] | [Operand, Operand];
 }
 
 // New filter type for frequency filtering
@@ -44,6 +63,7 @@ export interface Event {
   name: string;
   description: string;
   entities: string[];
+  computedColumns: ComputedColumn[];
   filters: Filter[];
   sql: string;
 }

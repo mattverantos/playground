@@ -65,28 +65,64 @@ const EventList: React.FC = () => {
     return 'none';
   };
 
-  // Find events that reference the given event
+  // Find events that reference the given event in their filters (as EntityColumn operands)
   const getEventReferences = (eventId: string): Event[] => {
-    // Since relatedEventId is no longer in the type, we need to modify this
-    // This can be modified based on how you want to implement event references
-    return [];
+    return state.events.filter(event => {
+      // Skip the event itself
+      if (event.id === eventId) return false;
+      
+      // Check all filters of the event
+      return event.filters.some(filter => {
+        // Only check column filters with operands
+        if (filter.type !== 'column') return false;
+        
+        const colFilter = filter as ColumnFilter;
+        if (!colFilter.operands) return false;
+        
+        // Check if any operand references the target event
+        return colFilter.operands.some(operand => 
+          typeof operand === 'object' && 
+          operand !== null && 
+          'id' in operand && 
+          operand.id === eventId
+        );
+      });
+    });
   };
   
-  // Find events that use the given event in their entities array
+  // Find events that use the given event in their entities array (already working correctly)
   const getEntityReferences = (eventId: string): Event[] => {
     return state.events.filter(event => 
       event.id !== eventId && event.entities.includes(eventId)
     );
   };
   
-  // Find events that are referenced by the given event
+  // Find events that are referenced by the given event's filters (as EntityColumn operands)
   const getEventsReferencedBy = (event: Event): Event[] => {
-    // Since relatedEventId is no longer in the type, we need to modify this
-    // This can be modified based on how you want to implement event references
-    return [];
+    // Get all unique event IDs referenced in this event's filters
+    const referencedEventIds = new Set<string>();
+    
+    event.filters.forEach(filter => {
+      if (filter.type !== 'column') return;
+      
+      const colFilter = filter as ColumnFilter;
+      if (!colFilter.operands) return;
+      
+      colFilter.operands.forEach(operand => {
+        if (typeof operand === 'object' && 
+            operand !== null && 
+            'id' in operand && 
+            operand.id !== event.id) {
+          referencedEventIds.add(operand.id);
+        }
+      });
+    });
+    
+    // Return the events for these IDs
+    return state.events.filter(e => referencedEventIds.has(e.id));
   };
   
-  // Find events that are used in the given event's entities array
+  // Find events that are used in the given event's entities array (already working correctly)
   const getEntitiesReferencedBy = (event: Event): Event[] => {
     return state.events.filter(e => 
       e.id !== event.id && event.entities.includes(e.id)
