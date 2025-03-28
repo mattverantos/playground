@@ -1,4 +1,4 @@
-import { Filter, FilterType, Event, ColumnFilter } from '../types/cohort';
+import { Filter, FilterType, Event, ColumnFilter, EventId } from '../types/cohort';
 
 import ColumnFilterComponent from "./ColumnFilter";
 
@@ -6,11 +6,12 @@ import ColumnFilterComponent from "./ColumnFilter";
 const FilterWrapper: React.FC<{
     filter: Filter;
     index: number;
+    eventId: EventId;
     updateFilter: (id: string, field: string, value: any) => void;
     removeFilter: (id: string) => void;
     showLogicalOperator: boolean;
     events: Event[];
-  }> = ({ filter, index, updateFilter, removeFilter, showLogicalOperator, events }) => {
+  }> = ({ filter, index, eventId, updateFilter, removeFilter, showLogicalOperator, events }) => {
     return (
       <div key={filter.id} className="p-3 border rounded mb-2 bg-gray-50">
         <div className="flex justify-between mb-2">
@@ -44,6 +45,7 @@ const FilterWrapper: React.FC<{
           <ColumnFilterComponent 
             filter={filter as ColumnFilter} 
             updateFilter={updateFilter}
+            eventId={eventId}
             events={events}
           />
         )}

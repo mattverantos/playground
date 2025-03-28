@@ -11,7 +11,7 @@ const initialState = {
         {
           "id": "oral_dmt_filter",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "drug_type",
           "operator": "=",
           "operands": [
@@ -21,7 +21,7 @@ const initialState = {
         {
           "id": "route_filter",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "route",
           "operator": "=",
           "operands": [
@@ -41,7 +41,7 @@ const initialState = {
         {
           "id": "age_filter",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "demographic_date_of_birth",
           "operator": "age_at_least",
           "operands": [
@@ -65,7 +65,7 @@ const initialState = {
         {
           "id": "rrms_condition",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition",
           "operator": "=",
           "operands": [
@@ -75,7 +75,7 @@ const initialState = {
         {
           "id": "neurologist_source",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition_source",
           "operator": "=",
           "operands": [
@@ -85,7 +85,7 @@ const initialState = {
         {
           "id": "baseline_period",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition_date",
           "operator": "between",
           "operands": [
@@ -112,7 +112,7 @@ const initialState = {
         {
           "id": "prior_dmt_filter",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "drug_type",
           "operator": "=",
           "operands": [
@@ -122,7 +122,7 @@ const initialState = {
         {
           "id": "prior_date_filter",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "drug_date_start",
           "operator": "<",
           "operands": [
@@ -145,7 +145,7 @@ const initialState = {
         {
           "id": "ppms_condition",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition",
           "operator": "=",
           "operands": [
@@ -155,7 +155,7 @@ const initialState = {
         {
           "id": "ppms_baseline_period",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition_date",
           "operator": "between",
           "operands": [
@@ -183,7 +183,7 @@ const initialState = {
         {
           "id": "infection_condition",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition",
           "operator": "=",
           "operands": [
@@ -193,7 +193,7 @@ const initialState = {
         {
           "id": "hospitalization",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "visit_type",
           "operator": "=",
           "operands": [
@@ -203,7 +203,7 @@ const initialState = {
         {
           "id": "infection_period",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "visit_date_start",
           "operator": "between",
           "operands": [
@@ -230,7 +230,7 @@ const initialState = {
         {
           "id": "malignancy_condition",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition",
           "operator": "=",
           "operands": [
@@ -240,7 +240,7 @@ const initialState = {
         {
           "id": "exclude_nmsc",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition",
           "operator": "!=",
           "operands": [
@@ -250,7 +250,7 @@ const initialState = {
         {
           "id": "malignancy_period",
           "type": "column",
-          "logicalOperator": [],
+          "logicalOperator": null,
           "columnName": "condition_date",
           "operator": "<",
           "operands": [

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useCohort } from '../contexts/CohortContext';
-import { ColumnFilter, Event, Filter } from '../types/cohort';
-
+import { ColumnFilter, Event, Filter, Entity } from '../types/cohort';
 
 const getEntityNames = (eventMap: any, entities: string[]): React.ReactNode => {
   if (entities.length === 0) return <span className="italic text-gray-500">None</span>;
@@ -26,10 +25,17 @@ const getEntityNames = (eventMap: any, entities: string[]): React.ReactNode => {
             </React.Fragment>
           );
         } else {
-          // For direct entities, return bold text
+          // For direct entities, get entity name from the Entity enum if possible
+          let displayName = e;
+          // Check if it's a valid Entity enum key and display it nicely
+          if (Object.values(Entity).includes(e as Entity)) {
+            // Format the enum value to be more readable (e.g., CONDITION -> Condition)
+            displayName = e.charAt(0).toUpperCase() + e.slice(1).toLowerCase();
+          }
+          
           return (
             <React.Fragment key={e}>
-              <span className="font-bold">{e}</span>
+              <span className="font-bold">{displayName}</span>
               {separator}
             </React.Fragment>
           );

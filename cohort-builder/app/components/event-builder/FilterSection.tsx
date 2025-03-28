@@ -1,6 +1,6 @@
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Filter, FilterOperator, Event } from '../../types/cohort';
+import { Filter, FilterOperator, Event, EventId } from '../../types/cohort';
 import { columnOptions } from '../ColumnFilter';
 import FilterWrapper from '../FilterWrapper';
 
@@ -8,12 +8,14 @@ interface FilterSectionProps {
   filters: Filter[];
   setFilters: (filters: Filter[]) => void;
   events: Event[];
+  eventId: EventId;
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({
   filters,
   setFilters,
-  events
+  events,
+  eventId
 }) => {
   // Generate empty column filter template
   const newColumnFilter = (operator?: FilterOperator) => ({
@@ -23,7 +25,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
     columnName: columnOptions[0].value,
     columnType: 'string',
     operator: '=',
-    operands: []
+    operands: [],
   });
 
   const addFilter = () => {
@@ -76,6 +78,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
           key={filter.id}
           filter={filter}
           index={index}
+          eventId={eventId}
           updateFilter={updateFilter}
           removeFilter={removeFilter}
           showLogicalOperator={index > 0}

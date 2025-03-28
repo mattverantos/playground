@@ -1,12 +1,12 @@
-import { Entity } from '../types/cohort';
+import { Entity, EntityColumn } from '../types/cohort';
 
 export const domainOptions = [
-  { value: 'visit', label: 'Visit' },
-  { value: 'procedure', label: 'Procedure' },
-  { value: 'measurement', label: 'Measurement' },
-  { value: 'drug', label: 'Drug' },
-  { value: 'condition', label: 'Condition' },
-  { value: 'demographic', label: 'Demographic' },
+  { value: Entity.VISIT, label: 'Visit' },
+  { value: Entity.PROCEDURE, label: 'Procedure' },
+  { value: Entity.MEASUREMENT, label: 'Measurement' },
+  { value: Entity.DRUG, label: 'Drug' },
+  { value: Entity.CONDITION, label: 'Condition' },
+  { value: Entity.DEMOGRAPHIC, label: 'Demographic' },
 ];
 
 export const functionOptions = [
@@ -18,12 +18,47 @@ export const functionOptions = [
 ];
 
 // Sample column options for entities - in a real app, these would come from your schema
-export const entityColumnOptions: Record<Entity, string[]> = {
-  'visit': ['visit_start_date', 'visit_end_date', 'visit_type'],
-  'procedure': ['procedure_date', 'procedure_type', 'procedure', 'procedure_quantity', 'procedure_modifier'],
-  'observation': ['observation_date', 'observation_value', 'observation_unit', 'observation_type'],
-  'measurement': ['measurement_date', 'measurement_value', 'measurement_unit'],
-  'drug': ['drug_start_date', 'drug_end_date', 'drug_concept'],
-  'condition': ['condition_start_date', 'condition_end_date', 'condition_status', 'condition', 'condition_source', 'condition_type'],
-  'demographic': ['birth_date', 'gender', 'race', 'ethnicity'],
+export const entityColumnOptions: Record<Entity, EntityColumn[]> = {
+  [Entity.VISIT]: [
+    EntityColumn.VISIT_START_DATE,
+    EntityColumn.VISIT_END_DATE,
+    EntityColumn.VISIT_TYPE
+  ],
+  [Entity.PROCEDURE]: [
+    EntityColumn.PROCEDURE_DATE,
+    EntityColumn.PROCEDURE_TYPE,
+    EntityColumn.PROCEDURE,
+    EntityColumn.PROCEDURE_QUANTITY,
+    EntityColumn.PROCEDURE_MODIFIER
+  ],
+  [Entity.OBSERVATION]: [
+    EntityColumn.OBSERVATION_DATE,
+    EntityColumn.OBSERVATION_VALUE,
+    EntityColumn.OBSERVATION_UNIT,
+    EntityColumn.OBSERVATION_TYPE
+  ],
+  [Entity.MEASUREMENT]: [
+    EntityColumn.MEASUREMENT_DATE,
+    EntityColumn.MEASUREMENT_VALUE,
+    EntityColumn.MEASUREMENT_UNIT
+  ],
+  [Entity.DRUG]: [
+    EntityColumn.DRUG_START_DATE,
+    EntityColumn.DRUG_END_DATE,
+    EntityColumn.DRUG_CONCEPT
+  ],
+  [Entity.CONDITION]: [
+    EntityColumn.CONDITION_START_DATE,
+    EntityColumn.CONDITION_END_DATE,
+    EntityColumn.CONDITION_STATUS,
+    EntityColumn.CONDITION,
+    EntityColumn.CONDITION_SOURCE,
+    EntityColumn.CONDITION_TYPE
+  ],
+  [Entity.DEMOGRAPHIC]: [
+    EntityColumn.BIRTH_DATE,
+    EntityColumn.GENDER,
+    EntityColumn.RACE,
+    EntityColumn.ETHNICITY
+  ],
 };

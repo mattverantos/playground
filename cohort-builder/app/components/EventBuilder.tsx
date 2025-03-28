@@ -179,6 +179,7 @@ const EventBuilder: React.FC = () => {
             filters={filters}
             setFilters={setFilters}
             events={state.events}
+            eventId={state.currentEvent ? state.currentEvent.id : ''}
           />
           
           <div className="flex justify-end gap-2">

@@ -8,6 +8,44 @@ export type ColumnFunction = 'ADD' | 'SUBTRACT' | 'MULTIPLY' | 'DIVIDE' | 'CONCA
 
 export type ColumnOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | 'IN' | 'NOT IN' | 'BETWEEN';
 
+export enum EntityColumn {
+  VISIT_START_DATE = 'visit_start_date',
+  VISIT_END_DATE = 'visit_end_date',
+  VISIT_TYPE = 'visit_type',
+  PROCEDURE_DATE = 'procedure_date',
+  PROCEDURE_TYPE = 'procedure_type',
+  PROCEDURE = 'procedure',
+  PROCEDURE_QUANTITY = 'procedure_quantity',
+  PROCEDURE_MODIFIER = 'procedure_modifier',
+  OBSERVATION_DATE = 'observation_date',
+  OBSERVATION_VALUE = 'observation_value',
+  OBSERVATION_UNIT = 'observation_unit',
+  OBSERVATION_TYPE = 'observation_type',
+  MEASUREMENT_DATE = 'measurement_date',
+  MEASUREMENT_VALUE = 'measurement_value',
+  MEASUREMENT_TYPE = 'measurement_type',
+  MEASUREMENT_SOURCE = 'measurement_source',
+  MEASUREMENT_RANGE_HIGH = 'measurement_range_high',
+  MEASUREMENT_RANGE_LOW = 'measurement_range_low',
+  MEASUREMENT_UNIT = 'measurement_unit',
+  DRUG_START_DATE = 'drug_start_date',
+  DRUG_END_DATE = 'drug_end_date',
+  DRUG_CONCEPT = 'drug_concept',
+  DRUG_ROUTE = 'drug_route',
+  DRUG_DOSE = 'drug_dose',
+  DRUG_TYPE = 'drug_type',
+  CONDITION_START_DATE = 'condition_start_date',
+  CONDITION_END_DATE = 'condition_end_date',
+  CONDITION_STATUS = 'condition_status',
+  CONDITION = 'condition',
+  CONDITION_SOURCE = 'condition_source',
+  CONDITION_TYPE = 'condition_type',
+  BIRTH_DATE = 'birth_date',
+  GENDER = 'gender',
+  RACE = 'race',
+  ETHNICITY = 'ethnicity'
+}
+
 export enum Entity {
   CONDITION = 'condition',
   DRUG = 'drug',
@@ -18,13 +56,18 @@ export enum Entity {
   OBSERVATION = 'observation',
 }
 
-export type EntityColumn = {
-  id: string;
-  column: string;
+export type EventId = string;
+export type EventColumnId = string;
+export type ComputedColumnId = string;
+
+export type EventColumn = {
+  id: EventColumnId;
+  eventId: EventId;
+  column: EntityColumn;
 }
 
 export type ComputedColumn = {
-  id: string;
+  id: ComputedColumnId;
   name: string;
   function: ColumnFunction;
   operands: Operand[];
@@ -36,13 +79,13 @@ export interface BaseFilter {
   logicalOperator?: FilterOperator;
 }
 
-export type Operand = string | number | EntityColumn;
+export type Operand = string | number | EventColumnId | ComputedColumnId | EntityColumn;
 
 // New filter type for column filtering
 export interface ColumnFilter extends BaseFilter {
   type: 'column';
   columnType: ColumnType;
-  columnName?: string; // concept, concept type, related concept, etc.
+  columnName?: EntityColumn | ComputedColumn; // concept, concept type, related concept, etc.
   operator?: ColumnOperator;
   operands?: [] | [Operand] | [Operand, Operand];
 }
@@ -62,7 +105,7 @@ export interface Event {
   id: string;
   name: string;
   description: string;
-  entities: string[];
+  entities: Entity[]; // Changed from string[] to Entity[]
   computedColumns: ComputedColumn[];
   filters: Filter[];
   sql: string;

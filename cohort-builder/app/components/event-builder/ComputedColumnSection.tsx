@@ -1,6 +1,6 @@
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ComputedColumn, ColumnFunction, Operand, EntityColumn, Event } from '../../types/cohort';
+import { ComputedColumn, ColumnFunction, Operand, EntityColumn, Entity, Event } from '../../types/cohort';
 import { functionOptions, entityColumnOptions } from '../../constants/cohort-options';
 
 interface ComputedColumnSectionProps {
@@ -60,6 +60,7 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
   const getOperandType = (operand: Operand | undefined): string => {
     if (!operand) return 'literal';
     if (typeof operand === 'string' || typeof operand === 'number') return 'literal';
+    if ('column' in operand && 'eventId' in operand) return 'eventColumn';
     if ('column' in operand) return 'entityColumn';
     return 'literal'; // Default
   };
@@ -70,7 +71,10 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
     
     switch (type) {
       case 'entityColumn':
-        newOperand = { id: uuidv4(), column: '' };
+        newOperand = { id: uuidv4(), column: '' } as EntityColumn;
+        break;
+      case 'eventColumn':
+        newOperand = { id: uuidv4(), eventId: '', column: '' } as EventColumn;
         break;
       case 'literal':
       default:
@@ -83,29 +87,69 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
 
   // Get available columns based on selected entities
   const getAvailableColumns = () => {
-    let columns: string[] = [];
+    let columns: EntityColumn[] = [];
     selectedEntities.forEach(entity => {
       // Check if this is a domain entity (like 'visit') or a reference to another event
-      if (entityColumnOptions[entity]) {
-        // This is a domain entity
-        columns = [...columns, ...entityColumnOptions[entity]];
+      const entityKey = entity as Entity;
+      if (Object.values(Entity).includes(entityKey) && 
+          entityColumnOptions[entityKey]) {
+        // This is a domain entity - add its columns
+        columns = [...columns, ...entityColumnOptions[entityKey]];
       } else {
         // This might be a reference to another event
         const referencedEvent = events.find(e => e.id === entity);
-        if (referencedEvent) {
-          // Add computed columns from the referenced event
-          const eventColumns = referencedEvent.computedColumns?.map(c => c.name) || [];
-          columns = [...columns, ...eventColumns];
+        if (referencedEvent && referencedEvent.computedColumns) {
+          // We would add computed columns here, but they're not EntityColumn types
+          // For now, we'll ignore them as the type system doesn't support mixing them
         }
       }
     });
     return columns;
   };
 
+  // Get other events that can be referenced (excluding current event)
+  const getReferencableEvents = () => {
+    return events.filter(event => 
+      // Include all events that have names
+      event.name && event.name.trim() !== ''
+    );
+  };
+
+  // Get columns available from a specific event
+  const getEventColumns = (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return [];
+    
+    // Get computed columns and regular columns from the event
+    const computedColumns = event.computedColumns?.map(c => c.name) || [];
+    const regularColumns = event.columns || [];
+    
+    // Get columns from the event's entity
+    let entityColumns: string[] = [];
+    if (event.selectedEntities && event.selectedEntities.length > 0) {
+      event.selectedEntities.forEach(entity => {
+        // Check if this entity has predefined columns in entityColumnOptions
+        if (entityColumnOptions[entity as keyof typeof entityColumnOptions]) {
+          entityColumns = [...entityColumns, ...entityColumnOptions[entity as keyof typeof entityColumnOptions]];
+        }
+      });
+    } else if (event.entities && event.entities.length > 0) {
+      // If selectedEntities is not available, try using entities
+      event.entities.forEach(entity => {
+        if (entityColumnOptions[entity as keyof typeof entityColumnOptions]) {
+          entityColumns = [...entityColumns, ...entityColumnOptions[entity as keyof typeof entityColumnOptions]];
+        }
+      });
+    }
+    
+    return [...computedColumns, ...regularColumns, ...entityColumns];
+  };
+
   // Render the appropriate input for each operand type
   const renderOperandInput = (columnId: string, operandIndex: number, operand: Operand | undefined) => {
     const type = getOperandType(operand);
     const availableColumns = getAvailableColumns();
+    const referencableEvents = getReferencableEvents();
     
     switch (type) {
       case 'literal':
@@ -129,12 +173,10 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
         return (
           <select
             className="flex-1 p-2 border rounded"
-            value={(operand as EntityColumn)?.column || ''}
+            value={(operand as any)?.column || ''}
             onChange={(e) => {
-              updateComputedColumnOperand(columnId, operandIndex, {
-                id: (operand as EntityColumn)?.id || uuidv4(),
-                column: e.target.value
-              });
+              const selectedColumn = e.target.value as EntityColumn;
+              updateComputedColumnOperand(columnId, operandIndex, selectedColumn);
             }}
           >
             <option value="">Select a column</option>
@@ -142,6 +184,49 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
               <option key={col} value={col}>{col}</option>
             ))}
           </select>
+        );
+        
+      case 'eventColumn':
+        // For event columns, we need to select an event first, then a column from that event
+        const eventOperand = operand as any; // Using any here due to type complexity
+        const selectedEventColumns = eventOperand?.eventId ? getEventColumns(eventOperand.eventId) : [];
+        
+        return (
+          <div className="flex-1 flex gap-2">
+            <select
+              className="w-1/2 p-2 border rounded"
+              value={eventOperand?.eventId || ''}
+              onChange={(e) => {
+                updateComputedColumnOperand(columnId, operandIndex, {
+                  ...eventOperand,
+                  eventId: e.target.value,
+                  column: '' // Reset column when event changes
+                });
+              }}
+            >
+              <option value="">Select an event</option>
+              {referencableEvents.map(event => (
+                <option key={event.id} value={event.id}>{event.name}</option>
+              ))}
+            </select>
+            
+            <select
+              className="w-1/2 p-2 border rounded"
+              value={eventOperand?.column || ''}
+              disabled={!eventOperand?.eventId}
+              onChange={(e) => {
+                updateComputedColumnOperand(columnId, operandIndex, {
+                  ...eventOperand,
+                  column: e.target.value as EntityColumn
+                });
+              }}
+            >
+              <option value="">Select a column</option>
+              {selectedEventColumns.map(col => (
+                <option key={col} value={col}>{col}</option>
+              ))}
+            </select>
+          </div>
         );
         
       default:
@@ -213,6 +298,7 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
                 >
                   <option value="literal">Literal Value</option>
                   <option value="entityColumn">Entity Column</option>
+                  <option value="eventColumn">Event Column</option>
                 </select>
                 
                 {renderOperandInput(column.id, 0, column.operands?.[0])}
@@ -227,6 +313,7 @@ const ComputedColumnSection: React.FC<ComputedColumnSectionProps> = ({
                 >
                   <option value="literal">Literal Value</option>
                   <option value="entityColumn">Entity Column</option>
+                  <option value="eventColumn">Event Column</option>
                 </select>
                 
                 {renderOperandInput(column.id, 1, column.operands?.[1])}
