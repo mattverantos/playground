@@ -14,23 +14,20 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Criterion Builder
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The current application focuses on a three step process for defining cohorts. The first step is defining events which means you are filtering on event concepts related entities, numeric filtering, and "uniqueness" which I like to call frequency filtering. The second step is derived events which builds on the events to do higher order logic (merge/sequence), or event instance selection. The third step is selecting the index date (it is required that it be a derived instance event), and selection criteria. The selection criteria is a selection of events where a patient has at least one occurrence, but you can also do a new type of filtering which is on demographics (birth/age/gender/race/ethnicity).
 
-## Learn More
+There are competing goals that determine the features of the cohort builder. One is cohort exploration and the other is study definition. They are competing because when you do data exploration, you don't necessarily know or want to set up an index date. You may first want to see the distribution of some column. Or you may want to see how many patients a specific criterion affects.
 
-To learn more about Next.js, take a look at the following resources:
+#### New features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+* Set a date restriction on specific events
+* Set an event date when all other criteria met
+* Specify an event not happening in a sequence or time window (AND NOT operator should allow this)
+* Specify criteria on duration of an event
+* Index date relative to an event (need to computed column section)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Look into sum(duration) between some study period

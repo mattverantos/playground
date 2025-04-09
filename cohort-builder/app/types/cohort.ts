@@ -12,7 +12,9 @@ export enum EntityColumn {
   VISIT_START_DATE = 'visit_start_date',
   VISIT_END_DATE = 'visit_end_date',
   VISIT_TYPE = 'visit_type',
-  PROCEDURE_DATE = 'procedure_date',
+  PROCEDURE_DATE = 'procedure_start_date',
+  PROCEDURE_END_DATE = 'procedure_end_date',
+  PROCEDURE_SOURCE = 'procedure_source',
   PROCEDURE_TYPE = 'procedure_type',
   PROCEDURE = 'procedure',
   PROCEDURE_QUANTITY = 'procedure_quantity',
@@ -66,13 +68,6 @@ export type EventColumn = {
   column: EntityColumn;
 }
 
-export type ComputedColumn = {
-  id: ComputedColumnId;
-  name: string;
-  function: ColumnFunction;
-  operands: Operand[];
-}
-
 export interface BaseFilter {
   id: string;
   type: FilterType;
@@ -81,6 +76,13 @@ export interface BaseFilter {
 
 export type Operand = string | number | EventColumnId | ComputedColumnId | EntityColumn;
 
+
+export type ComputedColumn = {
+  id: ComputedColumnId;
+  name: string;
+  function: ColumnFunction;
+  operands: Operand[];
+}
 // New filter type for column filtering
 export interface ColumnFilter extends BaseFilter {
   type: 'column';

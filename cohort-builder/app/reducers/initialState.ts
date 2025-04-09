@@ -1,9 +1,10 @@
 const initialState = {
   "events": [
     {
-      "id": "oral_dmt_index",
-      "name": "Oral Disease-Modifying Therapy Prescription",
-      "description": "Initial prescription of oral DMT (index event)",
+      "id": "oral_dmt",
+      "name": "Oral Disease-Modifying Therapy",
+      "description": "Prescription of oral disease-modifying therapy (index event)",
+      "computedColumns": [],
       "entities": [
         "drug"
       ],
@@ -11,53 +12,53 @@ const initialState = {
         {
           "id": "oral_dmt_filter",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "drug_type",
-          "operator": "=",
-          "operands": [
-            "oral disease-modifying therapy"
-          ]
-        },
-        {
-          "id": "route_filter",
-          "type": "column",
-          "logicalOperator": null,
+          "logicalOperator": "AND",
           "columnName": "route",
           "operator": "=",
           "operands": [
-            "oral"
+            "ORAL"
+          ]
+        },
+        {
+          "id": "dmt_type",
+          "type": "column",
+          "logicalOperator": "AND",
+          "columnName": "drug_type",
+          "operator": "=",
+          "operands": [
+            "DMT"
           ]
         }
       ]
     },
     {
       "id": "age_check",
-      "name": "Age Check",
-      "description": "Verify patient is at least 18 years old on index date",
+      "name": "Age at Index",
+      "description": "Patient age calculation at index date",
+      "computedColumns": [
+        {
+          "id": "age_at_index",
+          "name": "age_at_index",
+          "function": "SUBTRACT",
+          "operand": [
+            {
+              "id": "oral_dmt",
+              "column": "drug_start_date"
+            },
+            "birth_date"
+          ]
+        }
+      ],
       "entities": [
         "demographic"
       ],
-      "filters": [
-        {
-          "id": "age_filter",
-          "type": "column",
-          "logicalOperator": null,
-          "columnName": "demographic_date_of_birth",
-          "operator": "age_at_least",
-          "operands": [
-            18.0,
-            {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
-            }
-          ]
-        }
-      ]
+      "filters": []
     },
     {
       "id": "rrms_diagnosis",
-      "name": "RRMS Diagnosis by Neurologist",
-      "description": "Diagnosis of RRMS by neurologist within 6 months before index",
+      "name": "RRMS Diagnosis",
+      "description": "RRMS diagnosis by neurologist during baseline",
+      "computedColumns": [],
       "entities": [
         "condition"
       ],
@@ -65,37 +66,27 @@ const initialState = {
         {
           "id": "rrms_condition",
           "type": "column",
-          "logicalOperator": null,
+          "logicalOperator": "AND",
           "columnName": "condition",
           "operator": "=",
           "operands": [
-            "relapsing-remitting multiple sclerosis"
+            "RRMS"
           ]
         },
         {
-          "id": "neurologist_source",
+          "id": "diagnosis_timing",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition_source",
-          "operator": "=",
-          "operands": [
-            "neurologist"
-          ]
-        },
-        {
-          "id": "baseline_period",
-          "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition_date",
-          "operator": "between",
+          "logicalOperator": "AND",
+          "columnName": "condition_start_date",
+          "operator": "BETWEEN",
           "operands": [
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             },
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             }
           ]
         }
@@ -104,31 +95,42 @@ const initialState = {
     {
       "id": "prior_oral_dmt",
       "name": "Prior Oral DMT Use",
-      "description": "Any use of oral DMT before index",
+      "description": "Any use of oral DMT prior to index",
+      "computedColumns": [],
       "entities": [
         "drug"
       ],
       "filters": [
         {
-          "id": "prior_dmt_filter",
+          "id": "prior_oral_route",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "drug_type",
+          "logicalOperator": "AND",
+          "columnName": "route",
           "operator": "=",
           "operands": [
-            "oral disease-modifying therapy"
+            "ORAL"
           ]
         },
         {
-          "id": "prior_date_filter",
+          "id": "prior_dmt_type",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "drug_date_start",
+          "logicalOperator": "AND",
+          "columnName": "drug_type",
+          "operator": "=",
+          "operands": [
+            "DMT"
+          ]
+        },
+        {
+          "id": "prior_timing",
+          "type": "column",
+          "logicalOperator": "AND",
+          "columnName": "drug_start_date",
           "operator": "<",
           "operands": [
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             }
           ]
         }
@@ -138,6 +140,7 @@ const initialState = {
       "id": "ppms_diagnosis",
       "name": "PPMS Diagnoses",
       "description": "Two or more PPMS diagnoses on separate days during baseline",
+      "computedColumns": [],
       "entities": [
         "condition"
       ],
@@ -145,27 +148,23 @@ const initialState = {
         {
           "id": "ppms_condition",
           "type": "column",
-          "logicalOperator": null,
+          "logicalOperator": "AND",
           "columnName": "condition",
           "operator": "=",
           "operands": [
-            "primary progressive multiple sclerosis"
+            "PPMS"
           ]
         },
         {
-          "id": "ppms_baseline_period",
+          "id": "ppms_timing",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition_date",
-          "operator": "between",
+          "logicalOperator": "AND",
+          "columnName": "condition_start_date",
+          "operator": "<",
           "operands": [
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
-            },
-            {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             }
           ]
         }
@@ -173,8 +172,9 @@ const initialState = {
     },
     {
       "id": "severe_infection",
-      "name": "Severe Infection Hospitalization",
-      "description": "Hospitalization for severe infection within 30 days before index",
+      "name": "Severe Infection Requiring Hospitalization",
+      "description": "Severe infections requiring hospitalization within 30 days prior to index",
+      "computedColumns": [],
       "entities": [
         "condition",
         "visit"
@@ -183,37 +183,37 @@ const initialState = {
         {
           "id": "infection_condition",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition",
+          "logicalOperator": "AND",
+          "columnName": "condition_type",
           "operator": "=",
           "operands": [
-            "severe infection"
+            "SEVERE_INFECTION"
           ]
         },
         {
           "id": "hospitalization",
           "type": "column",
-          "logicalOperator": null,
+          "logicalOperator": "AND",
           "columnName": "visit_type",
           "operator": "=",
           "operands": [
-            "inpatient"
+            "INPATIENT"
           ]
         },
         {
-          "id": "infection_period",
+          "id": "infection_timing",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "visit_date_start",
-          "operator": "between",
+          "logicalOperator": "AND",
+          "columnName": "condition_start_date",
+          "operator": "BETWEEN",
           "operands": [
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             },
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             }
           ]
         }
@@ -222,7 +222,8 @@ const initialState = {
     {
       "id": "malignancy",
       "name": "History of Malignancy",
-      "description": "Prior diagnosis of malignancy excluding non-melanoma skin cancer",
+      "description": "Prior malignancy excluding non-melanoma skin cancer",
+      "computedColumns": [],
       "entities": [
         "condition"
       ],
@@ -230,33 +231,33 @@ const initialState = {
         {
           "id": "malignancy_condition",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition",
+          "logicalOperator": "AND",
+          "columnName": "condition_type",
           "operator": "=",
           "operands": [
-            "malignancy"
+            "MALIGNANCY"
           ]
         },
         {
           "id": "exclude_nmsc",
           "type": "column",
-          "logicalOperator": null,
+          "logicalOperator": "AND",
           "columnName": "condition",
           "operator": "!=",
           "operands": [
-            "non-melanoma skin cancer"
+            "NON_MELANOMA_SKIN_CANCER"
           ]
         },
         {
-          "id": "malignancy_period",
+          "id": "malignancy_timing",
           "type": "column",
-          "logicalOperator": null,
-          "columnName": "condition_date",
+          "logicalOperator": "AND",
+          "columnName": "condition_start_date",
           "operator": "<",
           "operands": [
             {
-              "id": "oral_dmt_index",
-              "column": "drug_date_start"
+              "id": "oral_dmt",
+              "column": "drug_start_date"
             }
           ]
         }
@@ -264,9 +265,9 @@ const initialState = {
     }
   ],
   "currentEvent": null,
-  "indexEventId": "oral_dmt_index",
+  "indexEventId": "oral_dmt",
   "inclusionCriteria": [
-    "oral_dmt_index",
+    "oral_dmt",
     "age_check",
     "rrms_diagnosis"
   ],
